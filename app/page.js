@@ -86,9 +86,28 @@ export default function Inicio() {
         </div>
       )}
 
-      {/* Áreas */}
+      {/* Accesos a listas globales + Áreas */}
       {!res && (
         <div className="px-4 mt-6">
+          <div className="grid grid-cols-2 gap-3 mb-6">
+            <Link
+              href="/trabajadores"
+              className="tap bg-panel border border-line rounded-2xl p-4 active:scale-[.98] transition-transform"
+            >
+              <div className="text-2xl mb-1">👤</div>
+              <h2 className="font-bold leading-tight">Trabajadores</h2>
+              <p className="text-mut text-xs mt-0.5">Ver todos</p>
+            </Link>
+            <Link
+              href="/vehiculos"
+              className="tap bg-panel border border-line rounded-2xl p-4 active:scale-[.98] transition-transform"
+            >
+              <div className="text-2xl mb-1">🚑</div>
+              <h2 className="font-bold leading-tight">Vehículos</h2>
+              <p className="text-mut text-xs mt-0.5">Ver todos</p>
+            </Link>
+          </div>
+
           <p className="text-mut text-xs font-bold uppercase tracking-wider mb-3">Áreas</p>
           {loading ? (
             <Spinner />
