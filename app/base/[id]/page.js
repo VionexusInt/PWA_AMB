@@ -110,7 +110,11 @@ function ListaTrabajadores({ items, onEdit }) {
       {items.map((t) => (
         <div key={t.id} className="bg-panel border border-line rounded-xl p-4 flex items-start justify-between gap-3">
           <div className="min-w-0">
-            <h3 className="font-bold">{t.nombre}</h3>
+            <div className="flex items-center gap-2 flex-wrap">
+              <h3 className="font-bold">{t.nombre}</h3>
+              {t.de_baja && <Badge tone="accent">De baja</Badge>}
+              {t.tipo_contrato && <Badge>{t.tipo_contrato}</Badge>}
+            </div>
             <p className="text-mut text-sm mt-0.5">
               {[t.titulo, t.puesto_trabajo].filter(Boolean).join(" · ") || "Sin datos"}
             </p>
