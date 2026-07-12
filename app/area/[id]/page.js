@@ -4,7 +4,7 @@ import Link from "next/link";
 import { getArea } from "../../../lib/data";
 import { useRealtime } from "../../../lib/useRealtime";
 import { Header, Badge, Spinner } from "../../../components/ui";
-import FormEntidad from "../../../components/Formentidad";
+import FormEntidad from "../../../components/FormEntidad";
 
 export default function AreaPage({ params }) {
   const { id } = params;
