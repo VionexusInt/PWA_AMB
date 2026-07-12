@@ -23,14 +23,16 @@ const CONFIG = {
       { k: "nombre", label: "Nombre", req: true },
       { k: "titulo", label: "Título (TES, DUE…)" },
       { k: "puesto_trabajo", label: "Puesto de trabajo" },
+      { k: "tipo_contrato", label: "Contrato", tipo: "opciones", opciones: ["Fijo", "Eventual"] },
+      { k: "de_baja", label: "¿Está de baja?", tipo: "bool" },
     ],
     avisoBorrar: "Se eliminará el trabajador y sus incidencias.",
   },
   veh: {
     add: "Nuevo vehículo", edit: "Editar vehículo",
     campos: [
-      { k: "matricula", label: "Matrícula", req: true, upper: true },
-      { k: "id_personal", label: "ID personal", req: true },
+      { k: "matricula", label: "Matrícula", upper: true },
+      { k: "id_personal", label: "ID personal" },
       { k: "modelo", label: "Modelo" },
       { k: "clase", label: "Clase (SVB, SVA…)" },
     ],
@@ -49,6 +51,7 @@ function traducirError(msg = "") {
   return msg;
 }
 
+// Campo de texto normal
 function Campo({ label, ...props }) {
   return (
     <label className="block">
@@ -58,6 +61,58 @@ function Campo({ label, ...props }) {
         className="mt-1 w-full bg-panel2 border border-line rounded-xl px-3 py-3 text-ink outline-none focus:border-accent"
       />
     </label>
+  );
+}
+
+// Campo Sí / No (para la baja)
+function CampoBool({ label, value, onChange }) {
+  return (
+    <div>
+      <span className="text-mut text-sm">{label}</span>
+      <div className="mt-1 flex gap-2">
+        <button
+          type="button"
+          onClick={() => onChange(false)}
+          className={`tap flex-1 py-3 rounded-xl border font-semibold ${
+            !value ? "bg-accent text-white border-accent" : "bg-panel2 text-mut border-line"
+          }`}
+        >
+          No
+        </button>
+        <button
+          type="button"
+          onClick={() => onChange(true)}
+          className={`tap flex-1 py-3 rounded-xl border font-semibold ${
+            value ? "bg-accent text-white border-accent" : "bg-panel2 text-mut border-line"
+          }`}
+        >
+          Sí
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// Campo de opciones (para el contrato). Volver a tocar la opción la deselecciona.
+function CampoOpciones({ label, opciones, value, onChange }) {
+  return (
+    <div>
+      <span className="text-mut text-sm">{label}</span>
+      <div className="mt-1 flex gap-2 flex-wrap">
+        {opciones.map((op) => (
+          <button
+            key={op}
+            type="button"
+            onClick={() => onChange(value === op ? "" : op)}
+            className={`tap px-4 py-3 rounded-xl border font-semibold ${
+              value === op ? "bg-accent text-white border-accent" : "bg-panel2 text-mut border-line"
+            }`}
+          >
+            {op}
+          </button>
+        ))}
+      </div>
+    </div>
   );
 }
 
@@ -74,18 +129,18 @@ export default function FormEntidad({ tipo, modo, parentId, registro, onClose, o
   const [error, setError] = useState(null);
   const [confirmar, setConfirmar] = useState(false);
   const set = (k) => (e) => setV((s) => ({ ...s, [k]: e.target.value }));
+  const setVal = (k, nv) => setV((s) => ({ ...s, [k]: nv }));
 
   async function guardar() {
-    // Validación de obligatorios
     for (const c of cfg.campos) {
       if (c.req && !String(v[c.k] || "").trim()) {
         setError("Falta rellenar: " + c.label);
         return;
       }
     }
-    // Construir datos limpios
     const payload = {};
     cfg.campos.forEach((c) => {
+      if (c.tipo === "bool") { payload[c.k] = !!v[c.k]; return; }
       let val = v[c.k];
       if (typeof val === "string") { val = val.trim(); if (c.upper) val = val.toUpperCase(); }
       payload[c.k] = val || null;
@@ -132,15 +187,31 @@ export default function FormEntidad({ tipo, modo, parentId, registro, onClose, o
         <h2 className="title text-2xl font-bold mb-4">{cfg[modo]}</h2>
 
         <div className="space-y-3">
-          {cfg.campos.map((c) => (
-            <Campo
-              key={c.k}
-              label={c.req ? c.label + " *" : c.label}
-              value={v[c.k] || ""}
-              onChange={set(c.k)}
-              autoFocus={c === cfg.campos[0]}
-            />
-          ))}
+          {cfg.campos.map((c) => {
+            if (c.tipo === "bool")
+              return (
+                <CampoBool key={c.k} label={c.label} value={!!v[c.k]} onChange={(nv) => setVal(c.k, nv)} />
+              );
+            if (c.tipo === "opciones")
+              return (
+                <CampoOpciones
+                  key={c.k}
+                  label={c.label}
+                  opciones={c.opciones}
+                  value={v[c.k] || ""}
+                  onChange={(nv) => setVal(c.k, nv)}
+                />
+              );
+            return (
+              <Campo
+                key={c.k}
+                label={c.req ? c.label + " *" : c.label}
+                value={v[c.k] || ""}
+                onChange={set(c.k)}
+                autoFocus={c === cfg.campos[0]}
+              />
+            );
+          })}
         </div>
 
         {error && <p className="text-accent text-sm mt-3">{error}</p>}
@@ -158,7 +229,6 @@ export default function FormEntidad({ tipo, modo, parentId, registro, onClose, o
           </button>
         </div>
 
-        {/* Zona de borrado, solo al editar */}
         {modo === "edit" && (
           <div className="mt-6 pt-5 border-t border-line">
             {!confirmar ? (
