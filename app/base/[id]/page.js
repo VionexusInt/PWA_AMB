@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import Link from "next/link";
 import { getBase, resolverIncidencia } from "../../../lib/data";
 import { useRealtime } from "../../../lib/useRealtime";
 import { Header, Badge, Spinner } from "../../../components/ui";
@@ -90,7 +91,7 @@ function Vacio({ children }) {
   return <p className="text-mut text-center py-14">{children}</p>;
 }
 
-// Botón lápiz reutilizable
+// Botón lápiz (para editar rápido sin entrar en la ficha)
 function BotonEditar({ onClick }) {
   return (
     <button
@@ -108,8 +109,11 @@ function ListaTrabajadores({ items, onEdit }) {
   return (
     <div className="grid gap-2">
       {items.map((t) => (
-        <div key={t.id} className="bg-panel border border-line rounded-xl p-4 flex items-start justify-between gap-3">
-          <div className="min-w-0">
+        <div key={t.id} className="relative">
+          <Link
+            href={`/trabajador/${t.id}`}
+            className="tap block bg-panel border border-line rounded-xl p-4 pr-14 active:scale-[.98] transition-transform"
+          >
             <div className="flex items-center gap-2 flex-wrap">
               <h3 className="font-bold">{t.nombre}</h3>
               {t.de_baja && <Badge tone="accent">De baja</Badge>}
@@ -118,8 +122,10 @@ function ListaTrabajadores({ items, onEdit }) {
             <p className="text-mut text-sm mt-0.5">
               {[t.titulo, t.puesto_trabajo].filter(Boolean).join(" · ") || "Sin datos"}
             </p>
+          </Link>
+          <div className="absolute top-1/2 -translate-y-1/2 right-3">
+            <BotonEditar onClick={() => onEdit(t)} />
           </div>
-          <BotonEditar onClick={() => onEdit(t)} />
         </div>
       ))}
     </div>
@@ -131,16 +137,21 @@ function ListaVehiculos({ items, onEdit }) {
   return (
     <div className="grid gap-2">
       {items.map((v) => (
-        <div key={v.id} className="bg-panel border border-line rounded-xl p-4 flex items-start justify-between gap-3">
-          <div className="min-w-0">
+        <div key={v.id} className="relative">
+          <Link
+            href={`/vehiculo/${v.id}`}
+            className="tap block bg-panel border border-line rounded-xl p-4 pr-14 active:scale-[.98] transition-transform"
+          >
             <div className="flex items-center gap-2 flex-wrap">
-              <h3 className="font-bold title text-lg tracking-wide">{v.matricula}</h3>
+              <h3 className="font-bold title text-lg tracking-wide">{v.matricula || "Sin matrícula"}</h3>
               {v.id_personal && <Badge>ID {v.id_personal}</Badge>}
               {v.clase && <Badge>{v.clase}</Badge>}
             </div>
             <p className="text-mut text-sm mt-0.5">{v.modelo || "Sin modelo"}</p>
+          </Link>
+          <div className="absolute top-1/2 -translate-y-1/2 right-3">
+            <BotonEditar onClick={() => onEdit(v)} />
           </div>
-          <BotonEditar onClick={() => onEdit(v)} />
         </div>
       ))}
     </div>
