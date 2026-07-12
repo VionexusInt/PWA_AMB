@@ -122,7 +122,7 @@ function CampoOpciones({ label, opciones, value, onChange }) {
  * @param parentId  id del padre (area_id para base; base_id para el resto). Solo en add.
  * @param registro  registro existente. Solo en edit.
  */
-export default function FormEntidad({ tipo, modo, parentId, registro, onClose, onSaved }) {
+export default function FormEntidad({ tipo, modo, parentId, registro, onClose, onSaved, incField = "base_id" }) {
   const cfg = CONFIG[tipo];
   const [v, setV] = useState(() => (modo === "edit" ? { ...registro } : {}));
   const [guardando, setGuardando] = useState(false);
@@ -152,7 +152,7 @@ export default function FormEntidad({ tipo, modo, parentId, registro, onClose, o
       if (tipo === "base") r = await addBase(parentId, payload);
       else if (tipo === "trab") r = await addTrabajador(parentId, payload);
       else if (tipo === "veh") r = await addVehiculo(parentId, payload);
-      else r = await addIncidencia(parentId, payload.descripcion);
+      else r = await addIncidencia({ [incField]: parentId, descripcion: payload.descripcion });
     } else {
       if (tipo === "base") r = await updateBase(registro.id, payload);
       else if (tipo === "trab") r = await updateTrabajador(registro.id, payload);
