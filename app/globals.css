@@ -1,0 +1,37 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root { color-scheme: dark; }
+
+html { background: #0d1117; }
+
+body {
+  color: #e6edf3;
+  -webkit-tap-highlight-color: transparent;
+  overscroll-behavior-y: none;
+}
+
+/* Fondo de imagen fijo para toda la app */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background-image:
+    linear-gradient(rgba(13, 17, 23, 0.80), rgba(13, 17, 23, 0.90)),
+    url("/espartanoem.png");
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
+/* Tipografía de display condensada para titulares */
+.title { font-family: 'Barlow Semi Condensed', system-ui, sans-serif; letter-spacing: .5px; }
+
+/* Botón táctil grande reutilizable */
+.tap { touch-action: manipulation; }
+
+/* Ocultar scrollbars horizontales de las pestañas */
+.noscroll::-webkit-scrollbar { display: none; }
+.noscroll { -ms-overflow-style: none; scrollbar-width: none; }
