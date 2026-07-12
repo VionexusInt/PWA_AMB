@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
 import {
+  addArea, updateArea, deleteArea,
   addBase, updateBase, deleteBase,
   addTrabajador, updateTrabajador, deleteTrabajador,
   addVehiculo, updateVehiculo, deleteVehiculo,
@@ -9,6 +10,11 @@ import {
 
 // Configuración de campos por tipo de entidad
 const CONFIG = {
+  area: {
+    add: "Nueva área", edit: "Editar área",
+    campos: [{ k: "nombre", label: "Nombre", req: true }],
+    avisoBorrar: "Se eliminará el área y TODAS sus bases (con trabajadores, coches e incidencias).",
+  },
   base: {
     add: "Nueva base", edit: "Editar base",
     campos: [
@@ -149,12 +155,14 @@ export default function FormEntidad({ tipo, modo, parentId, registro, onClose, o
     setGuardando(true); setError(null);
     let r;
     if (modo === "add") {
-      if (tipo === "base") r = await addBase(parentId, payload);
+      if (tipo === "area") r = await addArea(payload);
+      else if (tipo === "base") r = await addBase(parentId, payload);
       else if (tipo === "trab") r = await addTrabajador(parentId, payload);
       else if (tipo === "veh") r = await addVehiculo(parentId, payload);
       else r = await addIncidencia({ [incField]: parentId, descripcion: payload.descripcion });
     } else {
-      if (tipo === "base") r = await updateBase(registro.id, payload);
+      if (tipo === "area") r = await updateArea(registro.id, payload);
+      else if (tipo === "base") r = await updateBase(registro.id, payload);
       else if (tipo === "trab") r = await updateTrabajador(registro.id, payload);
       else if (tipo === "veh") r = await updateVehiculo(registro.id, payload);
       else r = await updateIncidencia(registro.id, payload);
@@ -167,7 +175,8 @@ export default function FormEntidad({ tipo, modo, parentId, registro, onClose, o
   async function eliminar() {
     setGuardando(true); setError(null);
     let r;
-    if (tipo === "base") r = await deleteBase(registro.id);
+    if (tipo === "area") r = await deleteArea(registro.id);
+    else if (tipo === "base") r = await deleteBase(registro.id);
     else if (tipo === "trab") r = await deleteTrabajador(registro.id);
     else if (tipo === "veh") r = await deleteVehiculo(registro.id);
     else r = await deleteIncidencia(registro.id);
