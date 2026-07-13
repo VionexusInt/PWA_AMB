@@ -1,5 +1,6 @@
 import "./globals.css";
 import RegistrarSW from "../components/RegistrarSW";
+import GateAcceso from "../components/GateAcceso";
 
 export const metadata = {
   title: "Control · Ambulancias",
@@ -30,7 +31,7 @@ export default function RootLayout({ children }) {
         <link rel="apple-touch-icon" href="/icons/icon-192.png" />
       </head>
       <body className="font-sans min-h-screen">
-        {children}
+        <GateAcceso>{children}</GateAcceso>
         <RegistrarSW />
       </body>
     </html>
