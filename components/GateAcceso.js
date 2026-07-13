@@ -1,18 +1,23 @@
 "use client";
 import { useState, useEffect } from "react";
 import { supabase } from "../lib/supabase";
+import { KEY_CODIGO, KEY_ADMIN } from "../lib/acceso";
 
-const KEY = "disp_codigo";
-
-// Comprueba si un código está en la whitelist y activo
+// Devuelve la fila del dispositivo si el código está en la whitelist y activo, o null
 async function validar(cod) {
   const { data, error } = await supabase
     .from("dispositivos")
-    .select("id")
+    .select("id, es_admin")
     .eq("codigo", cod)
     .eq("activo", true)
     .maybeSingle();
-  return !error && !!data;
+  if (error || !data) return null;
+  return data;
+}
+
+function guardar(cod, row) {
+  localStorage.setItem(KEY_CODIGO, cod);
+  localStorage.setItem(KEY_ADMIN, row.es_admin ? "1" : "0");
 }
 
 export default function GateAcceso({ children }) {
@@ -22,11 +27,15 @@ export default function GateAcceso({ children }) {
   const [verificando, setVerificando] = useState(false);
 
   useEffect(() => {
-    const guardado = typeof window !== "undefined" ? localStorage.getItem(KEY) : null;
-    if (!guardado) { setEstado("bloq"); return; }
-    validar(guardado).then((ok) => {
-      if (ok) setEstado("ok");
-      else { localStorage.removeItem(KEY); setEstado("bloq"); }
+    const g = typeof window !== "undefined" ? localStorage.getItem(KEY_CODIGO) : null;
+    if (!g) { setEstado("bloq"); return; }
+    validar(g).then((row) => {
+      if (row) { guardar(g, row); setEstado("ok"); }
+      else {
+        localStorage.removeItem(KEY_CODIGO);
+        localStorage.removeItem(KEY_ADMIN);
+        setEstado("bloq");
+      }
     });
   }, []);
 
@@ -34,14 +43,10 @@ export default function GateAcceso({ children }) {
     const cod = codigo.trim();
     if (!cod) { setError("Escribe tu código."); return; }
     setVerificando(true); setError(null);
-    const ok = await validar(cod);
+    const row = await validar(cod);
     setVerificando(false);
-    if (ok) {
-      localStorage.setItem(KEY, cod);
-      setEstado("ok");
-    } else {
-      setError("Código no válido o desactivado.");
-    }
+    if (row) { guardar(cod, row); setEstado("ok"); }
+    else setError("Código no válido o desactivado.");
   }
 
   if (estado === "ok") return children;
@@ -54,7 +59,6 @@ export default function GateAcceso({ children }) {
     );
   }
 
-  // Pantalla de bloqueo / entrada de código
   return (
     <div className="min-h-screen grid place-items-center px-6">
       <div className="w-full max-w-sm text-center">
