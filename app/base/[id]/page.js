@@ -116,6 +116,7 @@ function ListaTrabajadores({ items, onEdit }) {
           >
             <div className="flex items-center gap-2 flex-wrap">
               <h3 className="font-bold">{t.nombre}</h3>
+              {t.id_personal && <Badge>ID {t.id_personal}</Badge>}
               {t.de_baja && <Badge tone="accent">De baja</Badge>}
               {t.tipo_contrato && <Badge>{t.tipo_contrato}</Badge>}
             </div>
