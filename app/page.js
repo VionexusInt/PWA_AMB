@@ -1,9 +1,10 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { getInicio } from "../lib/data";
 import { useRealtime } from "../lib/useRealtime";
 import { supabase } from "../lib/supabase";
+import { esDispositivoAdmin } from "../lib/acceso";
 import { Badge, Spinner } from "../components/ui";
 import FormEntidad from "../components/FormEntidad";
 
@@ -18,6 +19,8 @@ export default function Inicio() {
   const [res, setRes] = useState(null);
   const [buscando, setBuscando] = useState(false);
   const [form, setForm] = useState(null); // null | {modo, registro?}
+  const [admin, setAdmin] = useState(false);
+  useEffect(() => setAdmin(esDispositivoAdmin()), []);
   const totalPendientes = (areas || []).reduce((s, a) => s + (a.pendientes || 0), 0);
 
   async function buscar(texto) {
@@ -159,6 +162,19 @@ export default function Inicio() {
                 <p className="text-mut text-center py-6">No hay áreas. Pulsa + para añadir.</p>
               )}
             </div>
+          )}
+
+          {admin && (
+            <Link
+              href="/admin"
+              className="tap flex items-center gap-3 mt-6 bg-panel border border-line rounded-2xl p-4 active:scale-[.98] transition-transform"
+            >
+              <div className="text-2xl">⚙️</div>
+              <div>
+                <h2 className="font-bold leading-tight">Dispositivos</h2>
+                <p className="text-mut text-xs mt-0.5">Gestionar códigos de acceso</p>
+              </div>
+            </Link>
           )}
         </div>
       )}
