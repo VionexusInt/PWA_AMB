@@ -27,6 +27,7 @@ const CONFIG = {
     add: "Nuevo trabajador", edit: "Editar trabajador",
     campos: [
       { k: "nombre", label: "Nombre", req: true },
+      { k: "id_personal", label: "ID personal" },
       { k: "titulo", label: "Título (TES, DUE…)" },
       { k: "puesto_trabajo", label: "Puesto de trabajo" },
       { k: "tipo_contrato", label: "Contrato", tipo: "opciones", opciones: ["Fijo", "Eventual"] },
