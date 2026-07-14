@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
 import Link from "next/link";
-import { getVehiculo, addAsignacion, updateAsignacion, deleteAsignacion } from "../../../lib/data";
+import { getVehiculo, addAsignacion, updateAsignacion, deleteAsignacion, moverAsignacion } from "../../../lib/data";
 import { useRealtime } from "../../../lib/useRealtime";
 import { Header, Badge, Spinner } from "../../../components/ui";
 import FormEntidad from "../../../components/FormEntidad";
@@ -112,6 +112,7 @@ export default function VehiculoPage({ params }) {
         <SheetAsignar
           vehiculoId={id}
           plantilla={data.plantillaBase}
+          vehiculosBase={data.vehiculosBase}
           yaAsignados={yaAsignados}
           registro={asignar.registro}
           onClose={() => setAsignar(null)}
@@ -123,13 +124,26 @@ export default function VehiculoPage({ params }) {
 }
 
 /* ---------- Hoja para asignar / cambiar rol / quitar ---------- */
-function SheetAsignar({ vehiculoId, plantilla, yaAsignados, registro, onClose, onSaved }) {
+function SheetAsignar({ vehiculoId, plantilla, vehiculosBase = [], yaAsignados, registro, onClose, onSaved }) {
   const editMode = !!registro;
   const [trabajadorId, setTrabajadorId] = useState(registro?.trabajador?.id || "");
   const [rol, setRol] = useState(registro?.rol || "");
   const [guardando, setGuardando] = useState(false);
   const [error, setError] = useState(null);
   const [confirmar, setConfirmar] = useState(false);
+  const [destino, setDestino] = useState("");
+
+  async function transferir() {
+    if (!destino) { setError("Elige el coche de destino."); return; }
+    setGuardando(true); setError(null);
+    const r = await moverAsignacion(registro.id, destino);
+    setGuardando(false);
+    if (r?.error) {
+      setError(/duplicate|unique/i.test(r.error.message) ? "Esa persona ya está en ese coche." : r.error.message);
+      return;
+    }
+    onSaved();
+  }
 
   const disponibles = plantilla.filter((p) => !yaAsignados.includes(p.id));
 
@@ -221,6 +235,38 @@ function SheetAsignar({ vehiculoId, plantilla, yaAsignados, registro, onClose, o
             {guardando ? "Guardando…" : "Guardar"}
           </button>
         </div>
+
+        {/* Transferir a otro coche (solo al editar) */}
+        {editMode && (
+          <div className="mt-6 pt-5 border-t border-line">
+            <span className="text-mut text-sm">Transferir a otro coche</span>
+            {vehiculosBase.length ? (
+              <div className="mt-1 flex gap-2">
+                <select
+                  value={destino}
+                  onChange={(e) => setDestino(e.target.value)}
+                  className="flex-1 bg-panel2 border border-line rounded-xl px-3 py-3 text-ink outline-none focus:border-accent"
+                >
+                  <option value="">— Elige coche —</option>
+                  {vehiculosBase.map((v) => (
+                    <option key={v.id} value={v.id}>
+                      {v.matricula || "Sin matrícula"}{v.id_personal ? ` (ID ${v.id_personal})` : ""}
+                    </option>
+                  ))}
+                </select>
+                <button
+                  onClick={transferir}
+                  disabled={guardando || !destino}
+                  className="tap px-4 rounded-xl bg-accent text-white text-sm font-semibold disabled:opacity-50"
+                >
+                  Mover
+                </button>
+              </div>
+            ) : (
+              <p className="text-mut text-sm mt-1">No hay otros coches en esta base.</p>
+            )}
+          </div>
+        )}
 
         {/* Quitar asignación (solo al editar) */}
         {editMode && (
