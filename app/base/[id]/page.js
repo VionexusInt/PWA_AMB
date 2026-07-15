@@ -30,19 +30,6 @@ export default function BasePage({ params }) {
     <main className="pb-24">
       <Header titulo={data?.base?.nombre || "Base"} subtitulo={data?.base?.tipo} back />
 
-      {/* Recuento total del área a la que pertenece esta base */}
-      {data?.areaResumen && (
-        <div className="px-4 mt-3">
-          <div className="flex items-center justify-between bg-panel border border-line rounded-xl px-4 py-2.5">
-            <span className="text-mut text-sm">{data.areaResumen.nombre} · total</span>
-            <div className="flex gap-2">
-              <Badge>👤 {data.areaResumen.n_trab}</Badge>
-              <Badge>🚑 {data.areaResumen.n_veh}</Badge>
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* Pestañas */}
       <div className="sticky top-[64px] z-10 bg-base/95 backdrop-blur border-b border-line">
         <div className="flex gap-1 px-3 py-2 overflow-x-auto noscroll">
