@@ -3,10 +3,10 @@ import RegistrarSW from "../components/RegistrarSW";
 import GateAcceso from "../components/GateAcceso";
 
 export const metadata = {
-  title: "Control · Ambulancias",
+  title: "Espartanos",
   description: "Control de trabajadores, ambulancias y bases",
   manifest: "/manifest.json",
-  appleWebApp: { capable: true, statusBarStyle: "black-translucent", title: "Control" },
+  appleWebApp: { capable: true, statusBarStyle: "black-translucent", title: "Espartanos" },
 };
 
 export const viewport = {
