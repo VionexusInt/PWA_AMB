@@ -19,6 +19,19 @@ export default function AreaPage({ params }) {
     <main className="pb-24">
       <Header titulo={data?.area?.nombre || "Área"} subtitulo={data ? `${data.bases.length} bases` : ""} back />
 
+      {/* Totales de toda el área */}
+      {data && (
+        <div className="px-4 mt-3">
+          <div className="flex items-center justify-between bg-panel border border-line rounded-xl px-4 py-2.5">
+            <span className="text-mut text-sm">Total del área</span>
+            <div className="flex gap-2">
+              <Badge>👤 {data.bases.reduce((s, b) => s + (b.n_trab || 0), 0)}</Badge>
+              <Badge>🚑 {data.bases.reduce((s, b) => s + (b.n_veh || 0), 0)}</Badge>
+            </div>
+          </div>
+        </div>
+      )}
+
       {loading ? (
         <Spinner />
       ) : (
