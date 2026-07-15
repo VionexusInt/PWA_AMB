@@ -4,12 +4,16 @@
 
 :root { color-scheme: dark; }
 
-html { background: #0d1117; }
+html { background: #0a0d12; }
 
 body {
-  color: #e6edf3;
+  color: #eef2f7;
   -webkit-tap-highlight-color: transparent;
   overscroll-behavior-y: none;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  font-feature-settings: "cv01", "ss01";
 }
 
 /* Fondo de imagen fijo para toda la app */
@@ -19,19 +23,68 @@ body::before {
   inset: 0;
   z-index: -1;
   background-image:
-    linear-gradient(rgba(13, 17, 23, 0.80), rgba(13, 17, 23, 0.90)),
+    linear-gradient(180deg, rgba(10,13,18,0.82) 0%, rgba(10,13,18,0.90) 55%, rgba(10,13,18,0.96) 100%),
     url("/espartanoem.png");
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
 }
 
-/* Tipografía de display condensada para titulares */
-.title { font-family: 'Barlow Semi Condensed', system-ui, sans-serif; letter-spacing: .5px; }
+/* ---- Tipografía de titulares (condensada, con carácter) ---- */
+.title {
+  font-family: 'Barlow Semi Condensed', system-ui, sans-serif;
+  letter-spacing: .2px;
+  font-feature-settings: "ss01";
+}
 
-/* Botón táctil grande reutilizable */
+/* ---- Utilidades ---- */
 .tap { touch-action: manipulation; }
 
-/* Ocultar scrollbars horizontales de las pestañas */
 .noscroll::-webkit-scrollbar { display: none; }
 .noscroll { -ms-overflow-style: none; scrollbar-width: none; }
+
+/* Feedback táctil y transiciones sobrias en controles */
+button, a, select, input, textarea, label {
+  transition: transform .13s cubic-bezier(.16,1,.3,1),
+              background-color .18s ease,
+              border-color .18s ease,
+              color .18s ease,
+              box-shadow .18s ease,
+              opacity .18s ease;
+}
+
+/* Focus accesible y elegante (solo con teclado) */
+:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px #0a0d12, 0 0 0 4px rgba(230,57,70,.55);
+  border-radius: 12px;
+}
+
+/* Selección de texto */
+::selection { background: rgba(230,57,70,.28); color: #fff; }
+
+/* Sutil brillo en botones/acciones de acento (profundidad, no plano) */
+.bg-accent {
+  background-image: linear-gradient(180deg, rgba(255,255,255,.10), rgba(0,0,0,.10));
+}
+
+/* Cada pantalla entra con un fundido suave (sin mover fixed) */
+main { animation: fadeIn .28s ease; }
+
+/* Las hojas inferiores (formularios) suben con suavidad */
+.rounded-t-3xl { animation: sheetUp .30s cubic-bezier(.16,1,.3,1); }
+@keyframes sheetUp {
+  from { transform: translateY(100%); }
+  to   { transform: translateY(0); }
+}
+
+/* Scrollbar general discreta */
+*::-webkit-scrollbar { width: 10px; height: 10px; }
+*::-webkit-scrollbar-thumb {
+  background: #232b36; border-radius: 999px;
+  border: 3px solid transparent; background-clip: content-box;
+}
+*::-webkit-scrollbar-thumb:hover { background: #33404f; background-clip: content-box; }
+
+/* Spinner (usado por el componente de carga) */
+@keyframes spin { to { transform: rotate(360deg); } }
