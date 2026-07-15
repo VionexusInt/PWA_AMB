@@ -89,6 +89,7 @@ export default function IncidenciasPage() {
 
                 <p className="text-mut text-xs mt-2">
                   {new Date(i.fecha).toLocaleString("es-ES")}
+                  {i.adjuntos?.length > 0 && ` · 📎 ${i.adjuntos.length}`}
                   {i.resuelta && i.fecha_resolucion &&
                     ` · resuelta ${new Date(i.fecha_resolucion).toLocaleDateString("es-ES")}`}
                 </p>
