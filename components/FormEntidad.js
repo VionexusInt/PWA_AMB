@@ -1,11 +1,12 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   addArea, updateArea, deleteArea,
   addBase, updateBase, deleteBase,
   addTrabajador, updateTrabajador, deleteTrabajador,
   addVehiculo, updateVehiculo, deleteVehiculo,
   addIncidencia, updateIncidencia, deleteIncidencia,
+  getAdjuntos, subirAdjunto, borrarAdjunto, urlAdjunto,
 } from "../lib/data";
 
 // Configuración de campos por tipo de entidad
@@ -135,6 +136,17 @@ export default function FormEntidad({ tipo, modo, parentId, registro, onClose, o
   const [guardando, setGuardando] = useState(false);
   const [error, setError] = useState(null);
   const [confirmar, setConfirmar] = useState(false);
+  const [pendientes, setPendientes] = useState([]); // archivos elegidos, sin subir aún
+  const [existentes, setExistentes] = useState([]); // adjuntos ya guardados (modo edit)
+  const [subiendo, setSubiendo] = useState(false);
+
+  const esInc = tipo === "inc";
+
+  useEffect(() => {
+    if (esInc && modo === "edit" && registro?.id) {
+      getAdjuntos(registro.id).then(({ data }) => setExistentes(data || []));
+    }
+  }, [esInc, modo, registro?.id]);
   const set = (k) => (e) => setV((s) => ({ ...s, [k]: e.target.value }));
   const setVal = (k, nv) => setV((s) => ({ ...s, [k]: nv }));
 
@@ -170,6 +182,20 @@ export default function FormEntidad({ tipo, modo, parentId, registro, onClose, o
     }
     setGuardando(false);
     if (r?.error) { setError(traducirError(r.error.message)); return; }
+
+    // Subir archivos adjuntos (solo incidencias)
+    if (esInc && pendientes.length) {
+      const incId = modo === "add" ? r?.data?.id : registro.id;
+      if (incId) {
+        setSubiendo(true);
+        for (const f of pendientes) {
+          const up = await subirAdjunto(incId, f);
+          if (up?.error) { setSubiendo(false); setError("Guardado, pero un archivo falló al subir."); return; }
+        }
+        setSubiendo(false);
+      }
+    }
+
     onSaved();
   }
 
@@ -226,16 +252,26 @@ export default function FormEntidad({ tipo, modo, parentId, registro, onClose, o
 
         {error && <p className="text-accent text-sm mt-3">{error}</p>}
 
+        {/* Adjuntos: imágenes y PDF (solo incidencias) */}
+        {esInc && (
+          <AdjuntosBloque
+            existentes={existentes}
+            setExistentes={setExistentes}
+            pendientes={pendientes}
+            setPendientes={setPendientes}
+          />
+        )}
+
         <div className="flex gap-3 mt-5">
           <button onClick={onClose} className="tap flex-1 py-3 rounded-xl bg-panel2 border border-line font-semibold">
             Cancelar
           </button>
           <button
             onClick={guardar}
-            disabled={guardando}
+            disabled={guardando || subiendo}
             className="tap flex-1 py-3 rounded-xl bg-accent text-white font-semibold disabled:opacity-50"
           >
-            {guardando ? "Guardando…" : "Guardar"}
+            {subiendo ? "Subiendo…" : guardando ? "Guardando…" : "Guardar"}
           </button>
         </div>
 
@@ -271,6 +307,86 @@ export default function FormEntidad({ tipo, modo, parentId, registro, onClose, o
           </div>
         )}
       </div>
+    </div>
+  );
+}
+
+/* ---------- Bloque de adjuntos (imágenes y PDF) ---------- */
+function esImagen(tipo, nombre = "") {
+  return (tipo || "").startsWith("image/") || /\.(png|jpe?g|gif|webp|heic)$/i.test(nombre);
+}
+
+function AdjuntosBloque({ existentes, setExistentes, pendientes, setPendientes }) {
+  const [borrando, setBorrando] = useState(null);
+
+  function elegir(e) {
+    const files = Array.from(e.target.files || []);
+    setPendientes((p) => [...p, ...files]);
+    e.target.value = ""; // permite volver a elegir el mismo archivo
+  }
+
+  function quitarPendiente(idx) {
+    setPendientes((p) => p.filter((_, i) => i !== idx));
+  }
+
+  async function borrarExistente(a) {
+    setBorrando(a.id);
+    await borrarAdjunto(a.id, a.ruta);
+    setExistentes((list) => list.filter((x) => x.id !== a.id));
+    setBorrando(null);
+  }
+
+  return (
+    <div className="mt-5">
+      <span className="text-mut text-sm">Adjuntos (fotos o PDF)</span>
+
+      {/* Ya guardados */}
+      {existentes.length > 0 && (
+        <div className="mt-2 grid grid-cols-3 gap-2">
+          {existentes.map((a) => (
+            <div key={a.id} className="relative">
+              <a href={urlAdjunto(a.ruta)} target="_blank" rel="noreferrer" className="block">
+                {esImagen(a.tipo, a.nombre) ? (
+                  <img src={urlAdjunto(a.ruta)} alt="" className="w-full h-20 object-cover rounded-lg border border-line" />
+                ) : (
+                  <div className="w-full h-20 rounded-lg border border-line bg-panel2 grid place-items-center text-mut text-xs">
+                    <div className="text-center px-1">
+                      <div className="text-xl">📄</div>PDF
+                    </div>
+                  </div>
+                )}
+              </a>
+              <button
+                onClick={() => borrarExistente(a)}
+                disabled={borrando === a.id}
+                aria-label="Borrar adjunto"
+                className="tap absolute -top-2 -right-2 w-6 h-6 rounded-full bg-accent text-white text-xs grid place-items-center"
+              >
+                ×
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Pendientes de subir */}
+      {pendientes.length > 0 && (
+        <div className="mt-2 space-y-1">
+          {pendientes.map((f, i) => (
+            <div key={i} className="flex items-center justify-between bg-panel2 border border-line rounded-lg px-3 py-2">
+              <span className="text-sm truncate">{esImagen(f.type, f.name) ? "🖼️" : "📄"} {f.name}</span>
+              <button onClick={() => quitarPendiente(i)} className="tap text-mut text-lg" aria-label="Quitar">×</button>
+            </div>
+          ))}
+          <p className="text-mut text-xs">Se subirán al guardar.</p>
+        </div>
+      )}
+
+      {/* Botón elegir */}
+      <label className="tap mt-2 inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-panel2 border border-line text-sm font-semibold cursor-pointer">
+        + Añadir archivo
+        <input type="file" accept="image/*,application/pdf" multiple onChange={elegir} className="hidden" />
+      </label>
     </div>
   );
 }
