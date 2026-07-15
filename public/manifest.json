@@ -1,6 +1,6 @@
 {
-  "name": "Control · Ambulancias",
-  "short_name": "Control",
+  "name": "Espartanos",
+  "short_name": "Espartanos",
   "description": "Control de trabajadores, ambulancias y bases",
   "start_url": "/",
   "display": "standalone",
