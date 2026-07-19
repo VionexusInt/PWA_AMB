@@ -88,3 +88,19 @@ main { animation: fadeIn .28s ease; }
 
 /* Spinner (usado por el componente de carga) */
 @keyframes spin { to { transform: rotate(360deg); } }
+
+/* ---- Impresión / Guardar como PDF ---- */
+@media print {
+  body::before { display: none !important; }
+  html, body { background: #ffffff !important; }
+  .no-print { display: none !important; }
+  main { animation: none !important; padding: 0 !important; }
+  .informe-hoja {
+    box-shadow: none !important;
+    border: none !important;
+    border-radius: 0 !important;
+    max-width: 100% !important;
+    padding: 0 !important;
+  }
+  @page { margin: 14mm; }
+}

@@ -177,6 +177,19 @@ export default function Inicio() {
 
           {admin && (
             <Link
+              href="/exportar"
+              className="tap flex items-center gap-3 mt-3 bg-panel border border-line rounded-2xl p-4 active:scale-[.98] transition-transform"
+            >
+              <div className="text-2xl">📄</div>
+              <div>
+                <h2 className="font-bold leading-tight">Informes</h2>
+                <p className="text-mut text-xs mt-0.5">Exportar listados a PDF</p>
+              </div>
+            </Link>
+          )}
+
+          {admin && (
+            <Link
               href="/admin"
               className="tap flex items-center gap-3 mt-3 bg-panel border border-line rounded-2xl p-4 active:scale-[.98] transition-transform"
             >
