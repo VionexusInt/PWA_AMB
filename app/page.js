@@ -1,299 +1,215 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
-import { getVehiculo, addAsignacion, updateAsignacion, deleteAsignacion, moverAsignacion } from "../../../lib/data";
-import { useRealtime } from "../../../lib/useRealtime";
-import { Header, Badge, Spinner } from "../../../components/ui";
-import FormEntidad from "../../../components/FormEntidad";
-import Incidencias from "../../../components/Incidencias";
+import { getInicio } from "../lib/data";
+import { useRealtime } from "../lib/useRealtime";
+import { supabase } from "../lib/supabase";
+import { esDispositivoAdmin } from "../lib/acceso";
+import { Badge, Spinner } from "../components/ui";
+import FormEntidad from "../components/FormEntidad";
 
-const ROLES = ["Conductor", "Camillero", "Enfermero", "Médico", "Prácticas"];
-
-export default function VehiculoPage({ params }) {
-  const { id } = params;
-  const { data, loading, reload } = useRealtime(
-    () => getVehiculo(id),
-    ["vehiculos", "asignaciones", "incidencias", "trabajadores"],
-    [id]
+export default function Inicio() {
+  const { data: areas, loading, reload } = useRealtime(
+    getInicio,
+    ["areas", "bases", "incidencias", "trabajadores", "vehiculos"],
+    []
   );
-  const [editar, setEditar] = useState(false);
-  const [asignar, setAsignar] = useState(null); // null | {registro?}
 
-  const v = data?.vehiculo;
+  const [q, setQ] = useState("");
+  const [res, setRes] = useState(null);
+  const [buscando, setBuscando] = useState(false);
+  const [form, setForm] = useState(null); // null | {modo, registro?}
+  const [admin, setAdmin] = useState(false);
+  useEffect(() => setAdmin(esDispositivoAdmin()), []);
+  const totalPendientes = (areas || []).reduce((s, a) => s + (a.pendientes || 0), 0);
 
-  if (!loading && !v) {
-    return (
-      <main>
-        <Header titulo="Vehículo" back />
-        <p className="px-4 mt-6 text-mut">Este vehículo ya no existe.</p>
-      </main>
-    );
+  async function buscar(texto) {
+    setQ(texto);
+    if (texto.trim().length < 2) { setRes(null); return; }
+    setBuscando(true);
+    const like = `%${texto.trim()}%`;
+    const [b, t, v] = await Promise.all([
+      supabase.from("bases").select("id, nombre, tipo").ilike("nombre", like).limit(8),
+      supabase.from("trabajadores").select("id, nombre, base_id").ilike("nombre", like).limit(8),
+      supabase.from("vehiculos").select("id, matricula, base_id").ilike("matricula", like).limit(8),
+    ]);
+    setRes({ bases: b.data || [], trabajadores: t.data || [], vehiculos: v.data || [] });
+    setBuscando(false);
   }
-
-  const yaAsignados = (data?.asignaciones || []).map((a) => a.trabajador?.id).filter(Boolean);
 
   return (
     <main className="pb-24">
-      <Header titulo={v?.matricula || "Sin matrícula"} subtitulo={v?.base?.nombre} back />
-      {loading ? (
-        <Spinner />
-      ) : (
-        <div className="px-4 mt-4">
-          {/* Datos */}
-          <div className="bg-panel border border-line rounded-2xl p-4">
-            <div className="flex items-center gap-2 flex-wrap mb-2">
-              {v.id_personal && <Badge>ID {v.id_personal}</Badge>}
-              {v.clase && <Badge>{v.clase}</Badge>}
-            </div>
-            <p className="text-mut text-sm">{v.modelo || "Sin modelo"}</p>
-            <button
-              onClick={() => setEditar(true)}
-              className="tap mt-3 text-sm font-semibold px-4 py-2 rounded-xl bg-panel2 border border-line active:scale-95"
-            >
-              Editar datos
-            </button>
-          </div>
+      <div className="px-4 pt-[calc(env(safe-area-inset-top)+20px)] pb-2">
+        <p className="text-accent text-xs font-bold tracking-widest uppercase">Consola operativa</p>
+        <h1 className="title text-4xl font-extrabold leading-none mt-1">Espartanos</h1>
+      </div>
 
-          {/* Personal asignado */}
-          <section className="mt-6">
-            <div className="flex items-center justify-between mb-3">
-              <h2 className="title text-xl font-bold">Personal asignado</h2>
-              <button
-                onClick={() => setAsignar({})}
-                className="tap text-sm font-semibold px-3 py-1.5 rounded-full bg-accent text-white active:scale-95"
-              >
-                + Asignar
-              </button>
-            </div>
-            {!data.asignaciones.length ? (
-              <p className="text-mut text-sm">Nadie asignado todavía.</p>
-            ) : (
-              <div className="grid gap-2">
-                {data.asignaciones.map((a) => (
-                  <div key={a.id} className="bg-panel border border-line rounded-xl p-4 flex items-center justify-between gap-3">
-                    <Link href={`/trabajador/${a.trabajador?.id}`} className="min-w-0 tap">
-                      <h3 className="font-bold truncate">{a.trabajador?.nombre || "—"}</h3>
-                      {a.trabajador?.puesto_trabajo && (
-                        <p className="text-mut text-xs mt-0.5">{a.trabajador.puesto_trabajo}</p>
-                      )}
-                    </Link>
-                    <div className="flex items-center gap-2 shrink-0">
-                      {a.rol && <Badge tone="accent">{a.rol}</Badge>}
-                      <button
-                        onClick={() => setAsignar({ registro: a })}
-                        aria-label="Cambiar rol"
-                        className="tap w-8 h-8 rounded-full grid place-items-center bg-panel2 border border-line text-mut active:scale-95"
-                      >
-                        ✎
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
+      {/* Buscador global */}
+      <div className="px-4 mt-4">
+        <div className="flex items-center gap-2 bg-panel border border-line rounded-2xl px-4 py-3">
+          <span className="text-mut">🔎</span>
+          <input
+            value={q}
+            onChange={(e) => buscar(e.target.value)}
+            inputMode="search"
+            placeholder="Buscar base, trabajador o matrícula…"
+            className="bg-transparent outline-none w-full text-ink placeholder:text-mut"
+          />
+          {q && (
+            <button onClick={() => buscar("")} className="text-mut text-lg tap" aria-label="Limpiar">×</button>
+          )}
+        </div>
+      </div>
+
+      {/* Resultados de búsqueda */}
+      {res && (
+        <div className="px-4 mt-3 space-y-2">
+          {buscando && <p className="text-mut text-sm">Buscando…</p>}
+          {res.bases.map((b) => (
+            <Link key={"b" + b.id} href={`/base/${b.id}`} className="tap block bg-panel2 border border-line rounded-xl px-4 py-3">
+              <span className="text-mut text-xs">Base</span>
+              <p className="font-semibold">{b.nombre} <span className="text-mut font-normal">· {b.tipo}</span></p>
+            </Link>
+          ))}
+          {res.trabajadores.map((t) => (
+            <Link key={"t" + t.id} href={`/base/${t.base_id}`} className="tap block bg-panel2 border border-line rounded-xl px-4 py-3">
+              <span className="text-mut text-xs">Trabajador</span>
+              <p className="font-semibold">{t.nombre}</p>
+            </Link>
+          ))}
+          {res.vehiculos.map((v) => (
+            <Link key={"v" + v.id} href={`/base/${v.base_id}`} className="tap block bg-panel2 border border-line rounded-xl px-4 py-3">
+              <span className="text-mut text-xs">Vehículo</span>
+              <p className="font-semibold">{v.matricula}</p>
+            </Link>
+          ))}
+          {!buscando &&
+            !res.bases.length && !res.trabajadores.length && !res.vehiculos.length && (
+              <p className="text-mut text-sm py-4 text-center">Sin resultados para “{q}”.</p>
             )}
-          </section>
-
-          {/* Incidencias del vehículo */}
-          <Incidencias items={data.incidencias} incField="vehiculo_id" parentId={id} onChange={reload} />
         </div>
       )}
 
-      {editar && v && (
-        <FormEntidad
-          tipo="veh"
-          modo="edit"
-          registro={v}
-          onClose={() => setEditar(false)}
-          onSaved={() => { setEditar(false); reload(); }}
-        />
+      {/* Accesos a listas globales + Áreas */}
+      {!res && (
+        <div className="px-4 mt-6">
+          <div className="grid grid-cols-2 gap-3 mb-3">
+            <Link
+              href="/trabajadores"
+              className="tap bg-panel border border-line rounded-2xl p-4 active:scale-[.98] transition-transform"
+            >
+              <div className="text-2xl mb-1">👤</div>
+              <h2 className="font-bold leading-tight">Trabajadores</h2>
+              <p className="text-mut text-xs mt-0.5">Ver todos</p>
+            </Link>
+            <Link
+              href="/vehiculos"
+              className="tap bg-panel border border-line rounded-2xl p-4 active:scale-[.98] transition-transform"
+            >
+              <div className="text-2xl mb-1">🚑</div>
+              <h2 className="font-bold leading-tight">Vehículos</h2>
+              <p className="text-mut text-xs mt-0.5">Ver todos</p>
+            </Link>
+          </div>
+
+          <Link
+            href="/incidencias"
+            className="tap flex items-center justify-between bg-panel border border-line rounded-2xl p-4 mb-6 active:scale-[.98] transition-transform"
+          >
+            <div className="flex items-center gap-3">
+              <div className="text-2xl">⚠️</div>
+              <div>
+                <h2 className="font-bold leading-tight">Incidencias</h2>
+                <p className="text-mut text-xs mt-0.5">Ver todas</p>
+              </div>
+            </div>
+            {totalPendientes > 0 && <Badge tone="accent">{totalPendientes} sin resolver</Badge>}
+          </Link>
+
+          <p className="text-mut text-xs font-bold uppercase tracking-wider mb-3">Áreas</p>
+          {loading ? (
+            <Spinner />
+          ) : (
+            <div className="grid gap-3">
+              {(areas || []).map((a) => (
+                <div key={a.id} className="relative">
+                  <Link
+                    href={`/area/${a.id}`}
+                    className="tap block bg-panel border border-line rounded-2xl p-4 pr-14 active:scale-[.98] transition-transform"
+                  >
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h2 className="title text-2xl font-bold">{a.nombre}</h2>
+                        <p className="text-mut text-sm mt-0.5">{a.n_bases} bases</p>
+                      </div>
+                      {a.pendientes > 0 ? (
+                        <Badge tone="accent">{a.pendientes} incidencias</Badge>
+                      ) : (
+                        <Badge tone="ok">Sin incidencias</Badge>
+                      )}
+                    </div>
+                  </Link>
+                  <button
+                    onClick={() => setForm({ modo: "edit", registro: a })}
+                    aria-label="Editar área"
+                    className="tap absolute top-3 right-3 w-9 h-9 rounded-full grid place-items-center bg-panel2 border border-line text-mut active:scale-95"
+                  >
+                    ✎
+                  </button>
+                </div>
+              ))}
+              {!(areas || []).length && (
+                <p className="text-mut text-center py-6">No hay áreas. Pulsa + para añadir.</p>
+              )}
+            </div>
+          )}
+
+          <Link
+            href="/sugerencias"
+            className="tap flex items-center gap-3 mt-6 bg-panel border border-line rounded-2xl p-4 active:scale-[.98] transition-transform"
+          >
+            <div className="text-2xl">💬</div>
+            <div>
+              <h2 className="font-bold leading-tight">Sugerencias</h2>
+              <p className="text-mut text-xs mt-0.5">Enviar idea o reportar un fallo</p>
+            </div>
+          </Link>
+
+          {admin && (
+            <Link
+              href="/admin"
+              className="tap flex items-center gap-3 mt-3 bg-panel border border-line rounded-2xl p-4 active:scale-[.98] transition-transform"
+            >
+              <div className="text-2xl">⚙️</div>
+              <div>
+                <h2 className="font-bold leading-tight">Dispositivos</h2>
+                <p className="text-mut text-xs mt-0.5">Gestionar códigos de acceso</p>
+              </div>
+            </Link>
+          )}
+        </div>
       )}
 
-      {asignar && (
-        <SheetAsignar
-          vehiculoId={id}
-          plantilla={data.plantillaBase}
-          vehiculosBase={data.vehiculosBase}
-          yaAsignados={yaAsignados}
-          registro={asignar.registro}
-          onClose={() => setAsignar(null)}
-          onSaved={() => { setAsignar(null); reload(); }}
+      {/* Botón flotante: añadir área */}
+      {!loading && !res && (
+        <button
+          onClick={() => setForm({ modo: "add" })}
+          className="tap fixed bottom-[calc(env(safe-area-inset-bottom)+18px)] right-5 w-14 h-14 rounded-full bg-accent text-white text-3xl grid place-items-center shadow-lg shadow-accent/30 active:scale-95"
+          aria-label="Añadir área"
+        >
+          +
+        </button>
+      )}
+
+      {form && (
+        <FormEntidad
+          tipo="area"
+          modo={form.modo}
+          registro={form.registro}
+          onClose={() => setForm(null)}
+          onSaved={() => { setForm(null); reload(); }}
         />
       )}
     </main>
-  );
-}
-
-/* ---------- Hoja para asignar / cambiar rol / quitar ---------- */
-function SheetAsignar({ vehiculoId, plantilla, vehiculosBase = [], yaAsignados, registro, onClose, onSaved }) {
-  const editMode = !!registro;
-  const [trabajadorId, setTrabajadorId] = useState(registro?.trabajador?.id || "");
-  const [rol, setRol] = useState(registro?.rol || "");
-  const [guardando, setGuardando] = useState(false);
-  const [error, setError] = useState(null);
-  const [confirmar, setConfirmar] = useState(false);
-  const [destino, setDestino] = useState("");
-
-  async function transferir() {
-    if (!destino) { setError("Elige el coche de destino."); return; }
-    setGuardando(true); setError(null);
-    const r = await moverAsignacion(registro.id, destino);
-    setGuardando(false);
-    if (r?.error) {
-      setError(/duplicate|unique/i.test(r.error.message) ? "Esa persona ya está en ese coche." : r.error.message);
-      return;
-    }
-    onSaved();
-  }
-
-  const disponibles = plantilla.filter((p) => !yaAsignados.includes(p.id));
-
-  async function guardar() {
-    if (!editMode && !trabajadorId) { setError("Elige una persona."); return; }
-    setGuardando(true); setError(null);
-    let r;
-    if (editMode) r = await updateAsignacion(registro.id, rol || null);
-    else r = await addAsignacion(vehiculoId, trabajadorId, rol || null);
-    setGuardando(false);
-    if (r?.error) {
-      setError(/duplicate|unique/i.test(r.error.message) ? "Esa persona ya está asignada." : r.error.message);
-      return;
-    }
-    onSaved();
-  }
-
-  async function quitar() {
-    setGuardando(true); setError(null);
-    const r = await deleteAsignacion(registro.id);
-    setGuardando(false);
-    if (r?.error) { setError(r.error.message); return; }
-    onSaved();
-  }
-
-  return (
-    <div className="fixed inset-0 z-30 flex items-end" onClick={onClose}>
-      <div className="absolute inset-0 bg-black/60" />
-      <div
-        className="relative w-full bg-panel border-t border-line rounded-t-3xl p-5 pb-[calc(env(safe-area-inset-bottom)+20px)] max-h-[90vh] overflow-y-auto"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="w-10 h-1 bg-line rounded-full mx-auto mb-4" />
-        <h2 className="title text-2xl font-bold mb-4">
-          {editMode ? `Rol de ${registro.trabajador?.nombre || ""}` : "Asignar persona"}
-        </h2>
-
-        {/* Selector de persona (solo al asignar) */}
-        {!editMode && (
-          <label className="block mb-4">
-            <span className="text-mut text-sm">Persona</span>
-            {disponibles.length ? (
-              <select
-                value={trabajadorId}
-                onChange={(e) => setTrabajadorId(e.target.value)}
-                className="mt-1 w-full bg-panel2 border border-line rounded-xl px-3 py-3 text-ink outline-none focus:border-accent"
-              >
-                <option value="">— Elige —</option>
-                {disponibles.map((p) => (
-                  <option key={p.id} value={p.id}>{p.nombre}</option>
-                ))}
-              </select>
-            ) : (
-              <p className="text-mut text-sm mt-1">
-                No quedan trabajadores libres en esta base (todos están ya asignados a este coche).
-              </p>
-            )}
-          </label>
-        )}
-
-        {/* Rol */}
-        <span className="text-mut text-sm">Rol</span>
-        <div className="mt-1 flex gap-2 flex-wrap">
-          {ROLES.map((op) => (
-            <button
-              key={op}
-              type="button"
-              onClick={() => setRol(rol === op ? "" : op)}
-              className={`tap px-4 py-3 rounded-xl border font-semibold ${
-                rol === op ? "bg-accent text-white border-accent" : "bg-panel2 text-mut border-line"
-              }`}
-            >
-              {op}
-            </button>
-          ))}
-        </div>
-
-        {error && <p className="text-accent text-sm mt-3">{error}</p>}
-
-        <div className="flex gap-3 mt-5">
-          <button onClick={onClose} className="tap flex-1 py-3 rounded-xl bg-panel2 border border-line font-semibold">
-            Cancelar
-          </button>
-          <button
-            onClick={guardar}
-            disabled={guardando || (!editMode && !disponibles.length)}
-            className="tap flex-1 py-3 rounded-xl bg-accent text-white font-semibold disabled:opacity-50"
-          >
-            {guardando ? "Guardando…" : "Guardar"}
-          </button>
-        </div>
-
-        {/* Transferir a otro coche (solo al editar) */}
-        {editMode && (
-          <div className="mt-6 pt-5 border-t border-line">
-            <span className="text-mut text-sm">Transferir a otro coche</span>
-            {vehiculosBase.length ? (
-              <div className="mt-1 flex gap-2">
-                <select
-                  value={destino}
-                  onChange={(e) => setDestino(e.target.value)}
-                  className="flex-1 bg-panel2 border border-line rounded-xl px-3 py-3 text-ink outline-none focus:border-accent"
-                >
-                  <option value="">— Elige coche —</option>
-                  {vehiculosBase.map((v) => (
-                    <option key={v.id} value={v.id}>
-                      {v.matricula || "Sin matrícula"}{v.id_personal ? ` (ID ${v.id_personal})` : ""}
-                    </option>
-                  ))}
-                </select>
-                <button
-                  onClick={transferir}
-                  disabled={guardando || !destino}
-                  className="tap px-4 rounded-xl bg-accent text-white text-sm font-semibold disabled:opacity-50"
-                >
-                  Mover
-                </button>
-              </div>
-            ) : (
-              <p className="text-mut text-sm mt-1">No hay otros coches en esta base.</p>
-            )}
-          </div>
-        )}
-
-        {/* Quitar asignación (solo al editar) */}
-        {editMode && (
-          <div className="mt-6 pt-5 border-t border-line">
-            {!confirmar ? (
-              <button
-                onClick={() => setConfirmar(true)}
-                className="tap w-full py-3 rounded-xl border border-accent/40 text-accent font-semibold"
-              >
-                Quitar del coche
-              </button>
-            ) : (
-              <div>
-                <p className="text-mut text-sm mb-3">Se quitará esta persona del coche. ¿Seguro?</p>
-                <div className="flex gap-3">
-                  <button onClick={() => setConfirmar(false)} className="tap flex-1 py-3 rounded-xl bg-panel2 border border-line font-semibold">
-                    No
-                  </button>
-                  <button onClick={quitar} disabled={guardando} className="tap flex-1 py-3 rounded-xl bg-accent text-white font-semibold disabled:opacity-50">
-                    {guardando ? "Quitando…" : "Sí, quitar"}
-                  </button>
-                </div>
-              </div>
-            )}
-          </div>
-        )}
-      </div>
-    </div>
   );
 }
