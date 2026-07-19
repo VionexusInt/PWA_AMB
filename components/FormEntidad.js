@@ -48,7 +48,11 @@ const CONFIG = {
   },
   inc: {
     add: "Nueva incidencia", edit: "Editar incidencia",
-    campos: [{ k: "descripcion", label: "Descripción", req: true }],
+    campos: [
+      { k: "tipo", label: "Tipo", tipo: "opciones", opciones: ["Seguridad", "Avería", "Personal", "Vehículo", "Otro"] },
+      { k: "descripcion", label: "Descripción", req: true, multi: true },
+      { k: "fecha", label: "Fecha del incidente", tipo: "fecha" },
+    ],
     avisoBorrar: "Se eliminará esta incidencia.",
   },
 };
@@ -60,12 +64,42 @@ function traducirError(msg = "") {
 }
 
 // Campo de texto normal
-function Campo({ label, ...props }) {
+function Campo({ label, multi, ...props }) {
+  return (
+    <label className="block">
+      <span className="text-mut text-sm">{label}</span>
+      {multi ? (
+        <textarea
+          {...props}
+          rows={4}
+          className="mt-1 w-full bg-panel2 border border-line rounded-xl px-3 py-3 text-ink outline-none focus:border-accent resize-none"
+        />
+      ) : (
+        <input
+          {...props}
+          className="mt-1 w-full bg-panel2 border border-line rounded-xl px-3 py-3 text-ink outline-none focus:border-accent"
+        />
+      )}
+    </label>
+  );
+}
+
+// convierte ISO -> valor para <input type="datetime-local"> en hora local
+function aInputFecha(iso) {
+  if (!iso) return "";
+  const d = new Date(iso);
+  const p = (n) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`;
+}
+
+function CampoFecha({ label, value, onChange }) {
   return (
     <label className="block">
       <span className="text-mut text-sm">{label}</span>
       <input
-        {...props}
+        type="datetime-local"
+        value={aInputFecha(value)}
+        onChange={(e) => onChange(e.target.value)}
         className="mt-1 w-full bg-panel2 border border-line rounded-xl px-3 py-3 text-ink outline-none focus:border-accent"
       />
     </label>
@@ -159,11 +193,17 @@ export default function FormEntidad({ tipo, modo, parentId, registro, onClose, o
     }
     const payload = {};
     cfg.campos.forEach((c) => {
+      if (c.tipo === "fecha") return; // la fecha se maneja aparte
       if (c.tipo === "bool") { payload[c.k] = !!v[c.k]; return; }
       let val = v[c.k];
       if (typeof val === "string") { val = val.trim(); if (c.upper) val = val.toUpperCase(); }
       payload[c.k] = val || null;
     });
+
+    // Fecha del incidente (si el formulario la tiene)
+    let fechaISO = null;
+    const campoFecha = cfg.campos.find((c) => c.tipo === "fecha");
+    if (campoFecha && v[campoFecha.k]) fechaISO = new Date(v[campoFecha.k]).toISOString();
 
     setGuardando(true); setError(null);
     let r;
@@ -172,13 +212,21 @@ export default function FormEntidad({ tipo, modo, parentId, registro, onClose, o
       else if (tipo === "base") r = await addBase(parentId, payload);
       else if (tipo === "trab") r = await addTrabajador(parentId, payload);
       else if (tipo === "veh") r = await addVehiculo(parentId, payload);
-      else r = await addIncidencia({ [incField]: parentId, descripcion: payload.descripcion });
+      else {
+        const incPayload = { [incField]: parentId, descripcion: payload.descripcion, tipo: payload.tipo };
+        if (fechaISO) incPayload.fecha = fechaISO;
+        r = await addIncidencia(incPayload);
+      }
     } else {
       if (tipo === "area") r = await updateArea(registro.id, payload);
       else if (tipo === "base") r = await updateBase(registro.id, payload);
       else if (tipo === "trab") r = await updateTrabajador(registro.id, payload);
       else if (tipo === "veh") r = await updateVehiculo(registro.id, payload);
-      else r = await updateIncidencia(registro.id, payload);
+      else {
+        const upd = { ...payload };
+        if (fechaISO) upd.fecha = fechaISO;
+        r = await updateIncidencia(registro.id, upd);
+      }
     }
     setGuardando(false);
     if (r?.error) { setError(traducirError(r.error.message)); return; }
@@ -190,7 +238,7 @@ export default function FormEntidad({ tipo, modo, parentId, registro, onClose, o
         setSubiendo(true);
         for (const f of pendientes) {
           const up = await subirAdjunto(incId, f);
-          if (up?.error) { setSubiendo(false); setError("Guardado, pero un archivo falló al subir."); return; }
+          if (up?.error) { setSubiendo(false); setError("Archivo no subido: " + (up.error.message || up.error.error || "error desconocido")); return; }
         }
         setSubiendo(false);
       }
@@ -238,10 +286,15 @@ export default function FormEntidad({ tipo, modo, parentId, registro, onClose, o
                   onChange={(nv) => setVal(c.k, nv)}
                 />
               );
+            if (c.tipo === "fecha")
+              return (
+                <CampoFecha key={c.k} label={c.label} value={v[c.k]} onChange={(nv) => setVal(c.k, nv)} />
+              );
             return (
               <Campo
                 key={c.k}
                 label={c.req ? c.label + " *" : c.label}
+                multi={c.multi}
                 value={v[c.k] || ""}
                 onChange={set(c.k)}
                 autoFocus={c === cfg.campos[0]}
