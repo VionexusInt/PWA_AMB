@@ -7,7 +7,11 @@ import {
   addVehiculo, updateVehiculo, deleteVehiculo,
   addIncidencia, updateIncidencia, deleteIncidencia,
   getAdjuntos, subirAdjunto, borrarAdjunto, urlAdjunto,
+  getTiposIncidencia, resolverTipoIncidencia,
 } from "../lib/data";
+
+// Tipos fijos de incidencia (siempre disponibles)
+const TIPOS_FIJOS = ["Seguridad", "Avería", "Personal", "Vehículo"];
 
 // Configuración de campos por tipo de entidad
 const CONFIG = {
@@ -49,7 +53,7 @@ const CONFIG = {
   inc: {
     add: "Nueva incidencia", edit: "Editar incidencia",
     campos: [
-      { k: "tipo", label: "Tipo", tipo: "opciones", opciones: ["Seguridad", "Avería", "Personal", "Vehículo", "Otro"] },
+      { k: "tipo", label: "Tipo", tipo: "tipoinc" },
       { k: "descripcion", label: "Descripción", req: true, multi: true },
       { k: "fecha", label: "Fecha del incidente", tipo: "fecha" },
     ],
@@ -158,6 +162,50 @@ function CampoOpciones({ label, opciones, value, onChange }) {
   );
 }
 
+// Tipo de incidencia: tipos fijos + personalizados + "Otro" (escribir uno nuevo)
+function CampoTipoIncidencia({ label, value, onChange, tiposCustom }) {
+  const conocidos = [...TIPOS_FIJOS, ...tiposCustom.filter((t) => !TIPOS_FIJOS.includes(t))];
+  const [otro, setOtro] = useState(() => !!value && !conocidos.includes(value));
+
+  return (
+    <div>
+      <span className="text-mut text-sm">{label}</span>
+      <div className="mt-1 flex gap-2 flex-wrap">
+        {conocidos.map((op) => (
+          <button
+            key={op}
+            type="button"
+            onClick={() => { setOtro(false); onChange(value === op ? "" : op); }}
+            className={`tap px-4 py-3 rounded-xl border font-semibold ${
+              !otro && value === op ? "bg-accent text-white border-accent" : "bg-panel2 text-mut border-line"
+            }`}
+          >
+            {op}
+          </button>
+        ))}
+        <button
+          type="button"
+          onClick={() => { setOtro(true); if (conocidos.includes(value)) onChange(""); }}
+          className={`tap px-4 py-3 rounded-xl border font-semibold ${
+            otro ? "bg-accent text-white border-accent" : "bg-panel2 text-mut border-line"
+          }`}
+        >
+          Otro
+        </button>
+      </div>
+      {otro && (
+        <input
+          value={value || ""}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder="Escribe el tipo (ej: Robo, Vandalismo…)"
+          autoFocus
+          className="mt-2 w-full bg-panel2 border border-line rounded-xl px-3 py-3 text-ink outline-none focus:border-accent"
+        />
+      )}
+    </div>
+  );
+}
+
 /**
  * @param tipo    "base" | "trab" | "veh" | "inc"
  * @param modo    "add" | "edit"
@@ -173,6 +221,7 @@ export default function FormEntidad({ tipo, modo, parentId, registro, onClose, o
   const [pendientes, setPendientes] = useState([]); // archivos elegidos, sin subir aún
   const [existentes, setExistentes] = useState([]); // adjuntos ya guardados (modo edit)
   const [subiendo, setSubiendo] = useState(false);
+  const [tiposCustom, setTiposCustom] = useState([]);
 
   const esInc = tipo === "inc";
 
@@ -181,6 +230,10 @@ export default function FormEntidad({ tipo, modo, parentId, registro, onClose, o
       getAdjuntos(registro.id).then(({ data }) => setExistentes(data || []));
     }
   }, [esInc, modo, registro?.id]);
+
+  useEffect(() => {
+    if (esInc) getTiposIncidencia().then(({ data }) => setTiposCustom((data || []).map((t) => t.nombre)));
+  }, [esInc]);
   const set = (k) => (e) => setV((s) => ({ ...s, [k]: e.target.value }));
   const setVal = (k, nv) => setV((s) => ({ ...s, [k]: nv }));
 
@@ -204,6 +257,13 @@ export default function FormEntidad({ tipo, modo, parentId, registro, onClose, o
     let fechaISO = null;
     const campoFecha = cfg.campos.find((c) => c.tipo === "fecha");
     if (campoFecha && v[campoFecha.k]) fechaISO = new Date(v[campoFecha.k]).toISOString();
+
+    // Tipo de incidencia: resolver duplicados / crear si es nuevo
+    if (esInc && payload.tipo) {
+      setGuardando(true);
+      const { nombre } = await resolverTipoIncidencia(payload.tipo, TIPOS_FIJOS);
+      payload.tipo = nombre;
+    }
 
     setGuardando(true); setError(null);
     let r;
@@ -284,6 +344,16 @@ export default function FormEntidad({ tipo, modo, parentId, registro, onClose, o
                   opciones={c.opciones}
                   value={v[c.k] || ""}
                   onChange={(nv) => setVal(c.k, nv)}
+                />
+              );
+            if (c.tipo === "tipoinc")
+              return (
+                <CampoTipoIncidencia
+                  key={c.k}
+                  label={c.label}
+                  value={v[c.k] || ""}
+                  onChange={(nv) => setVal(c.k, nv)}
+                  tiposCustom={tiposCustom}
                 />
               );
             if (c.tipo === "fecha")
