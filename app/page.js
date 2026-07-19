@@ -28,12 +28,23 @@ export default function Inicio() {
     if (texto.trim().length < 2) { setRes(null); return; }
     setBuscando(true);
     const like = `%${texto.trim()}%`;
-    const [b, t, v] = await Promise.all([
+    const orInc = `descripcion.ilike.${like},tipo.ilike.${like}`;
+    const [b, t, v, inc] = await Promise.all([
       supabase.from("bases").select("id, nombre, tipo").ilike("nombre", like).limit(8),
       supabase.from("trabajadores").select("id, nombre, base_id").ilike("nombre", like).limit(8),
       supabase.from("vehiculos").select("id, matricula, base_id").ilike("matricula", like).limit(8),
+      supabase
+        .from("incidencias")
+        .select("id, tipo, descripcion, base:bases(id,nombre), trabajador:trabajadores(id,nombre), vehiculo:vehiculos(id,matricula)")
+        .or(orInc)
+        .limit(8),
     ]);
-    setRes({ bases: b.data || [], trabajadores: t.data || [], vehiculos: v.data || [] });
+    setRes({
+      bases: b.data || [],
+      trabajadores: t.data || [],
+      vehiculos: v.data || [],
+      incidencias: inc.data || [],
+    });
     setBuscando(false);
   }
 
@@ -83,8 +94,19 @@ export default function Inicio() {
               <p className="font-semibold">{v.matricula}</p>
             </Link>
           ))}
+          {(res.incidencias || []).map((i) => {
+            const href = i.trabajador ? `/trabajador/${i.trabajador.id}`
+              : i.vehiculo ? `/vehiculo/${i.vehiculo.id}`
+              : i.base ? `/base/${i.base.id}` : "#";
+            return (
+              <Link key={"i" + i.id} href={href} className="tap block bg-panel2 border border-line rounded-xl px-4 py-3">
+                <span className="text-mut text-xs">Incidencia{i.tipo ? ` · ${i.tipo}` : ""}</span>
+                <p className="font-semibold line-clamp-1">{i.descripcion}</p>
+              </Link>
+            );
+          })}
           {!buscando &&
-            !res.bases.length && !res.trabajadores.length && !res.vehiculos.length && (
+            !res.bases.length && !res.trabajadores.length && !res.vehiculos.length && !(res.incidencias || []).length && (
               <p className="text-mut text-sm py-4 text-center">Sin resultados para “{q}”.</p>
             )}
         </div>
