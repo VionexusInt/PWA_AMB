@@ -5,9 +5,13 @@ import { Header } from "../../../components/ui";
 import {
   getDocumentosCSS,
   crearDocumentoCSS,
+  actualizarDocumentoCSS,
+  borrarDocumentoCSS,
   getRevaloracionRiesgos,
   crearRevaloracionRiesgo,
   getIncidencias,
+  actualizarIncidencia,
+  borrarIncidencia,
 } from "../../../lib/data";
 import { supabase } from "../../../lib/supabase";
 
@@ -17,6 +21,7 @@ export default function ComiteSeguridadTipoPage({ params }) {
   const [cargando, setCargando] = useState(true);
   const [mostrarFormulario, setMostrarFormulario] = useState(false);
   const [filtroTipo, setFiltroTipo] = useState("todos");
+  const [editandoId, setEditandoId] = useState(null);
 
   const [formData, setFormData] = useState({
     titulo: "",
@@ -46,15 +51,12 @@ export default function ComiteSeguridadTipoPage({ params }) {
       if (tipo === "revaloracion-riesgos") {
         data = await getRevaloracionRiesgos();
       } else if (tipo === "incidencias") {
-        // En CSS, solo mostramos incidencias de Seguridad y C.S.S.
         if (filtroTipo === "todos") {
-          // Obtenemos ambas: Seguridad y C.S.S.
           const [seguridadData, cssData] = await Promise.all([
             getIncidencias("Seguridad"),
             getIncidencias("C.S.S."),
           ]);
           data = [...(seguridadData || []), ...(cssData || [])];
-          // Ordenar por fecha descendente
           data.sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
         } else {
           const incidencias = await getIncidencias(filtroTipo);
@@ -91,12 +93,22 @@ export default function ComiteSeguridadTipoPage({ params }) {
           tipo: formData.tipo_incidencia,
           resuelta: false,
         };
-        const { error } = await supabase.from("incidencias").insert([payload]);
-        if (error) throw error;
+        if (editandoId) {
+          await actualizarIncidencia(editandoId, payload);
+        } else {
+          const { error } = await supabase.from("incidencias").insert([payload]);
+          if (error) throw error;
+        }
       } else {
-        await crearDocumentoCSS(tipo.replace("-", "_"), formData, archivo);
+        const tabla = tipo.replace("-", "_");
+        if (editandoId) {
+          await actualizarDocumentoCSS(tabla, editandoId, formData, archivo);
+        } else {
+          await crearDocumentoCSS(tabla, formData, archivo);
+        }
       }
       setMostrarFormulario(false);
+      setEditandoId(null);
       setFormData({
         titulo: "",
         descripcion: "",
@@ -116,6 +128,56 @@ export default function ComiteSeguridadTipoPage({ params }) {
     }
   }
 
+  function handleEditar(item) {
+    setEditandoId(item.id);
+    setFormData({
+      titulo: item.titulo || "",
+      descripcion: item.descripcion || "",
+      fecha: item.fecha ? item.fecha.split("T")[0] : new Date().toISOString().split("T")[0],
+      delegado_nombre: item.delegado_nombre || "",
+      juzgado: item.juzgado || "",
+      numero_sentencia: item.numero_sentencia || "",
+      area_id: item.area_id || "",
+      base_id: item.base_id || "",
+      tipo_incidencia: item.tipo || "",
+    });
+    setMostrarFormulario(true);
+  }
+
+  async function handleBorrar(item) {
+    if (!confirm("¿Estás seguro de que quieres borrar este registro?")) return;
+    try {
+      if (tipo === "incidencias") {
+        await borrarIncidencia(item.id);
+      } else if (tipo === "revaloracion-riesgos") {
+        await borrarDocumentoCSS("revaloracion_riesgos", item.id);
+      } else {
+        await borrarDocumentoCSS(tipo.replace("-", "_"), item.id);
+      }
+      cargarDatos();
+    } catch (error) {
+      console.error("Error al borrar:", error);
+      alert("Hubo un error al borrar.");
+    }
+  }
+
+  function resetFormulario() {
+    setMostrarFormulario(false);
+    setEditandoId(null);
+    setFormData({
+      titulo: "",
+      descripcion: "",
+      fecha: new Date().toISOString().split("T")[0],
+      delegado_nombre: "",
+      juzgado: "",
+      numero_sentencia: "",
+      area_id: "",
+      base_id: "",
+      tipo_incidencia: "",
+    });
+    setArchivo(null);
+  }
+
   let tituloPagina = tipo
     .split("-")
     .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
@@ -129,7 +191,6 @@ export default function ComiteSeguridadTipoPage({ params }) {
     <main className="pb-16">
       <Header titulo={tituloPagina} back />
       <div className="px-4 mt-6">
-        {/* FILTRO DE INCIDENCIAS */}
         {tipo === "incidencias" && (
           <div className="flex gap-2 mb-4">
             {["todos", "Seguridad", "C.S.S."].map((opcion) => (
@@ -149,7 +210,13 @@ export default function ComiteSeguridadTipoPage({ params }) {
         )}
 
         <button
-          onClick={() => setMostrarFormulario(!mostrarFormulario)}
+          onClick={() => {
+            if (mostrarFormulario) {
+              resetFormulario();
+            } else {
+              setMostrarFormulario(true);
+            }
+          }}
           className="w-full mb-4 bg-blue-600 text-white py-3 rounded-xl font-bold active:scale-[.98] transition-transform"
         >
           {mostrarFormulario ? "Cancelar" : "+ Nuevo Registro"}
@@ -161,18 +228,22 @@ export default function ComiteSeguridadTipoPage({ params }) {
             className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl p-5 mb-6 space-y-4 shadow-sm"
           >
             <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">
-              Nuevo Registro
+              {editandoId ? "Editar Registro" : "Nuevo Registro"}
             </h3>
-            <input
-              type="text"
-              placeholder="Título"
-              required
-              value={formData.titulo}
-              onChange={(e) =>
-                setFormData({ ...formData, titulo: e.target.value })
-              }
-              className="w-full p-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
-            />
+
+            {tipo !== "incidencias" && (
+              <input
+                type="text"
+                placeholder="Título"
+                required
+                value={formData.titulo}
+                onChange={(e) =>
+                  setFormData({ ...formData, titulo: e.target.value })
+                }
+                className="w-full p-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+              />
+            )}
+
             {tipo === "incidencias" && (
               <select
                 value={formData.tipo_incidencia}
@@ -186,6 +257,7 @@ export default function ComiteSeguridadTipoPage({ params }) {
                 <option value="C.S.S.">C.S.S.</option>
               </select>
             )}
+
             <textarea
               placeholder="Descripción"
               value={formData.descripcion}
@@ -195,15 +267,19 @@ export default function ComiteSeguridadTipoPage({ params }) {
               rows="3"
               className="w-full p-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all resize-none"
             />
-            <input
-              type="date"
-              required
-              value={formData.fecha}
-              onChange={(e) =>
-                setFormData({ ...formData, fecha: e.target.value })
-              }
-              className="w-full p-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
-            />
+
+            {tipo !== "incidencias" && (
+              <input
+                type="date"
+                required
+                value={formData.fecha}
+                onChange={(e) =>
+                  setFormData({ ...formData, fecha: e.target.value })
+                }
+                className="w-full p-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+              />
+            )}
+
             {tipo === "informes-delegados" && (
               <input
                 type="text"
@@ -215,6 +291,7 @@ export default function ComiteSeguridadTipoPage({ params }) {
                 className="w-full p-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
               />
             )}
+
             {tipo === "sentencias" && (
               <>
                 <input
@@ -240,6 +317,7 @@ export default function ComiteSeguridadTipoPage({ params }) {
                 />
               </>
             )}
+
             {tipo === "revaloracion-riesgos" && (
               <select
                 value={formData.area_id}
@@ -256,21 +334,25 @@ export default function ComiteSeguridadTipoPage({ params }) {
                 ))}
               </select>
             )}
-            <div className="pt-2">
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Adjuntar archivo (opcional)
-              </label>
-              <input
-                type="file"
-                onChange={(e) => setArchivo(e.target.files[0])}
-                className="w-full p-2 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 dark:file:bg-blue-900 dark:file:text-blue-200"
-              />
-            </div>
+
+            {tipo !== "incidencias" && (
+              <div className="pt-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Adjuntar archivo {editandoId ? "(deja en blanco para mantener el actual)" : "(opcional)"}
+                </label>
+                <input
+                  type="file"
+                  onChange={(e) => setArchivo(e.target.files[0])}
+                  className="w-full p-2 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 dark:file:bg-blue-900 dark:file:text-blue-200"
+                />
+              </div>
+            )}
+
             <button
               type="submit"
               className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-xl font-bold active:scale-[.98] transition-all shadow-md mt-2"
             >
-              Guardar Registro
+              {editandoId ? "Actualizar" : "Guardar"} Registro
             </button>
           </form>
         )}
@@ -285,31 +367,51 @@ export default function ComiteSeguridadTipoPage({ params }) {
                 className="bg-panel border border-line rounded-2xl p-4"
               >
                 <div className="flex justify-between items-start">
-                  <h3 className="font-bold text-lg">
-                    {item.titulo || item.descripcion || "Sin título"}
-                  </h3>
-                  {item.tipo && (
-                    <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full">
-                      {item.tipo}
-                    </span>
-                  )}
+                  <div className="flex-1">
+                    <h3 className="font-bold text-lg">
+                      {item.titulo || item.descripcion || "Sin título"}
+                    </h3>
+                    {item.descripcion && (
+                      <p className="text-mut text-sm mt-1">{item.descripcion}</p>
+                    )}
+                    {item.fecha && (
+                      <p className="text-mut text-xs mt-2">
+                        {new Date(item.fecha).toLocaleDateString()}
+                      </p>
+                    )}
+                    {item.tipo && (
+                      <span className="inline-block text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full mt-2">
+                        {item.tipo}
+                      </span>
+                    )}
+                    {item.archivo_nombre && (
+                      <a
+                        href={item.archivo_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-blue-600 text-sm hover:underline inline-block mt-2"
+                      >
+                        📎 {item.archivo_nombre}
+                      </a>
+                    )}
+                  </div>
+                  <div className="flex gap-1 ml-3">
+                    <button
+                      onClick={() => handleEditar(item)}
+                      className="text-yellow-600 hover:text-yellow-700 p-2"
+                      title="Editar"
+                    >
+                      ️
+                    </button>
+                    <button
+                      onClick={() => handleBorrar(item)}
+                      className="text-red-600 hover:text-red-700 p-2"
+                      title="Borrar"
+                    >
+                      🗑️
+                    </button>
+                  </div>
                 </div>
-                {item.descripcion && (
-                  <p className="text-mut text-sm mt-1">{item.descripcion}</p>
-                )}
-                <p className="text-mut text-xs mt-2">
-                  {new Date(item.fecha).toLocaleDateString()}
-                </p>
-                {item.archivo_nombre && (
-                  <a
-                    href={item.archivo_url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-blue-600 text-sm hover:underline inline-block mt-2"
-                  >
-                    📎 {item.archivo_nombre}
-                  </a>
-                )}
               </div>
             ))}
             {datos.length === 0 && (
