@@ -7,6 +7,7 @@ import {
   deleteDispositivo,
   getRoles,
   crearRol,
+  actualizarRol,
   borrarRol,
 } from "../../lib/data";
 import { useRealtime } from "../../lib/useRealtime";
@@ -84,6 +85,11 @@ export default function AdminPage() {
 
   function abrirNuevoRol() {
     setEditando(null);
+    setForm("rol");
+  }
+
+  function abrirEditarRol(rol) {
+    setEditando(rol);
     setForm("rol");
   }
 
@@ -206,20 +212,28 @@ export default function AdminPage() {
                     )}
                   </div>
                 </div>
-                <button
-                  onClick={async () => {
-                    if (!confirm(`¿Borrar el rol "${rol.nombre}"?`)) return;
-                    try {
-                      await borrarRol(rol.id);
-                      cargarRoles();
-                    } catch (e) {
-                      alert("Error al borrar: " + e.message);
-                    }
-                  }}
-                  className="tap shrink-0 text-xs font-bold px-3 py-1.5 rounded-full border border-accent/40 text-accent"
-                >
-                  Borrar
-                </button>
+                <div className="flex gap-2 shrink-0">
+                  <button
+                    onClick={() => abrirEditarRol(rol)}
+                    className="tap text-xs font-bold px-3 py-1.5 rounded-full border border-line bg-panel2 text-mut"
+                  >
+                    Editar
+                  </button>
+                  <button
+                    onClick={async () => {
+                      if (!confirm(`¿Borrar el rol "${rol.nombre}"?`)) return;
+                      try {
+                        await borrarRol(rol.id);
+                        cargarRoles();
+                      } catch (e) {
+                        alert("Error al borrar: " + e.message);
+                      }
+                    }}
+                    className="tap text-xs font-bold px-3 py-1.5 rounded-full border border-accent/40 text-accent"
+                  >
+                    Borrar
+                  </button>
+                </div>
               </div>
             </div>
           ))}
@@ -255,6 +269,7 @@ export default function AdminPage() {
 
       {form === "rol" && (
         <FormRol
+          rolEditar={editando}
           onClose={() => {
             setForm(false);
             setEditando(null);
@@ -491,11 +506,12 @@ function FormDispositivo({ registro, roles, onClose, onSaved }) {
   );
 }
 
-function FormRol({ onClose, onSaved }) {
-  const [nombre, setNombre] = useState("");
-  const [descripcion, setDescripcion] = useState("");
-  const [esAdmin, setEsAdmin] = useState(false);
-  const [permisos, setPermisos] = useState([]);
+function FormRol({ rolEditar, onClose, onSaved }) {
+  const editMode = !!rolEditar;
+  const [nombre, setNombre] = useState(rolEditar?.nombre || "");
+  const [descripcion, setDescripcion] = useState(rolEditar?.descripcion || "");
+  const [esAdmin, setEsAdmin] = useState(rolEditar?.es_admin || false);
+  const [permisos, setPermisos] = useState(rolEditar?.permisos || []);
   const [guardando, setGuardando] = useState(false);
   const [error, setError] = useState(null);
 
@@ -513,19 +529,28 @@ function FormRol({ onClose, onSaved }) {
     setGuardando(true);
     setError(null);
     try {
-      await crearRol({
-        nombre: nombre.trim(),
-        descripcion,
-        es_admin: esAdmin,
-        permisos,
-      });
+      if (editMode) {
+        await actualizarRol(rolEditar.id, {
+          nombre: nombre.trim(),
+          descripcion,
+          es_admin: esAdmin,
+          permisos,
+        });
+      } else {
+        await crearRol({
+          nombre: nombre.trim(),
+          descripcion,
+          es_admin: esAdmin,
+          permisos,
+        });
+      }
       onSaved();
     } catch (e) {
       setGuardando(false);
       setError(
         /duplicate|unique/i.test(e.message)
           ? "Ya existe un rol con ese nombre."
-          : e.message || "Error al crear el rol"
+          : e.message || "Error al guardar el rol"
       );
     }
   }
@@ -538,7 +563,9 @@ function FormRol({ onClose, onSaved }) {
         onClick={(e) => e.stopPropagation()}
       >
         <div className="w-10 h-1 bg-line rounded-full mx-auto mb-4" />
-        <h2 className="title text-2xl font-bold mb-4">Nuevo rol</h2>
+        <h2 className="title text-2xl font-bold mb-4">
+          {editMode ? "Editar rol" : "Nuevo rol"}
+        </h2>
 
         <div className="space-y-3">
           <label className="block">
