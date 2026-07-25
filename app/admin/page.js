@@ -14,6 +14,7 @@ import { esDispositivoAdmin } from "../../lib/acceso";
 import { Header, Badge, Spinner } from "../../components/ui";
 
 const PERMISOS_DISPONIBLES = [
+  { id: "buscador", nombre: "Buscador global" },
   { id: "areas", nombre: "Áreas" },
   { id: "comite_seguridad", nombre: "Comité de Seguridad" },
   { id: "comite_empresa", nombre: "Comité de Empresa" },
@@ -24,9 +25,9 @@ const PERMISOS_DISPONIBLES = [
 export default function AdminPage() {
   const [admin, setAdmin] = useState(null);
   const [roles, setRoles] = useState([]);
-  const [vista, setVista] = useState("dispositivos"); // 'dispositivos' | 'roles'
+  const [vista, setVista] = useState("dispositivos");
   const [form, setForm] = useState(false);
-  const [editando, setEditando] = useState(null); // dispositivo o rol en edición
+  const [editando, setEditando] = useState(null);
 
   useEffect(() => {
     setAdmin(esDispositivoAdmin());
@@ -94,7 +95,6 @@ export default function AdminPage() {
     <main className="pb-24">
       <Header titulo="Admin" back />
 
-      {/* Pestañas */}
       <div className="px-4 mt-4 flex gap-2">
         <button
           onClick={() => setVista("dispositivos")}
@@ -270,7 +270,6 @@ export default function AdminPage() {
   );
 }
 
-/* ---------- Alta / edición de un código ---------- */
 function FormDispositivo({ registro, roles, onClose, onSaved }) {
   const editMode = !!registro;
   const [codigo, setCodigo] = useState(registro?.codigo || "");
@@ -281,7 +280,6 @@ function FormDispositivo({ registro, roles, onClose, onSaved }) {
   const [error, setError] = useState(null);
   const [confirmar, setConfirmar] = useState(false);
 
-  // Al cambiar el rol, sincronizar esAdmin
   useEffect(() => {
     if (!rolId) return;
     const rol = roles.find((r) => r.id === rolId);
@@ -493,7 +491,6 @@ function FormDispositivo({ registro, roles, onClose, onSaved }) {
   );
 }
 
-/* ---------- Alta de un rol ---------- */
 function FormRol({ onClose, onSaved }) {
   const [nombre, setNombre] = useState("");
   const [descripcion, setDescripcion] = useState("");

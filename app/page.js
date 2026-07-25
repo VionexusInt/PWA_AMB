@@ -86,22 +86,24 @@ export default function Inicio() {
         <h1 className="title text-4xl font-extrabold leading-none mt-1">Espartanos</h1>
       </div>
 
-      {/* Buscador global */}
-      <div className="px-4 mt-4">
-        <div className="flex items-center gap-2 bg-panel border border-line rounded-2xl px-4 py-3">
-          <span className="text-mut">🔎</span>
-          <input
-            value={q}
-            onChange={(e) => buscar(e.target.value)}
-            inputMode="search"
-            placeholder="Buscar base, trabajador o matrícula…"
-            className="bg-transparent outline-none w-full text-ink placeholder:text-mut"
-          />
-          {q && (
-            <button onClick={() => buscar("")} className="text-mut text-lg tap" aria-label="Limpiar">×</button>
-          )}
+      {/* Buscador global - solo si tiene permiso */}
+      {tienePermiso("buscador") && (
+        <div className="px-4 mt-4">
+          <div className="flex items-center gap-2 bg-panel border border-line rounded-2xl px-4 py-3">
+            <span className="text-mut">🔎</span>
+            <input
+              value={q}
+              onChange={(e) => buscar(e.target.value)}
+              inputMode="search"
+              placeholder="Buscar base, trabajador o matrícula…"
+              className="bg-transparent outline-none w-full text-ink placeholder:text-mut"
+            />
+            {q && (
+              <button onClick={() => buscar("")} className="text-mut text-lg tap" aria-label="Limpiar">×</button>
+            )}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Resultados de búsqueda */}
       {res && (
