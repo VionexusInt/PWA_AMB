@@ -7,9 +7,9 @@ import {
   crearDocumentoCSS,
   getRevaloracionRiesgos,
   crearRevaloracionRiesgo,
-  getTodasIncidencias,
-} from "@/lib/data";
-import { supabase } from "@/lib/supabase";
+  getIncidencias, 
+} from "../../../lib/data";
+import { supabase } from "../../../lib/supabase"; 
 
 export default function ComiteSeguridadTipoPage({ params }) {
   const tipo = params.tipo;
@@ -44,7 +44,7 @@ export default function ComiteSeguridadTipoPage({ params }) {
       if (tipo === "revaloracion-riesgos") {
         data = await getRevaloracionRiesgos();
       } else if (tipo === "incidencias") {
-        const { data: incidencias } = await getTodasIncidencias();
+        const incidencias = await getIncidencias();
         data = incidencias || [];
       } else {
         data = await getDocumentosCSS(tipo.replace("-", "_"));
