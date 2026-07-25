@@ -97,10 +97,14 @@ export default function ComiteSeguridadTipoPage({ params }) {
     }
   }
 
-  const tituloPagina = tipo
+  let tituloPagina = tipo
     .split("-")
     .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
     .join(" ");
+
+  if (tipo === "revaloracion-riesgos") {
+    tituloPagina = "Evaluación de Riesgos";
+  }
 
   return (
     <main className="pb-16">
@@ -111,7 +115,7 @@ export default function ComiteSeguridadTipoPage({ params }) {
         {/* FILTRO DE INCIDENCIAS */}
         {tipo === "incidencias" && (
           <div className="flex gap-2 mb-4">
-            {["todos", "Seguridad", "CSS"].map((opcion) => (
+            {["todos", "Seguridad", "C.S.S."].map((opcion) => (
               <button
                 key={opcion}
                 onClick={() => setFiltroTipo(opcion)}
