@@ -4,7 +4,7 @@ import Link from "next/link";
 import { getInicio } from "../lib/data";
 import { useRealtime } from "../lib/useRealtime";
 import { supabase } from "../lib/supabase";
-import { esDispositivoAdmin } from "../lib/acceso";
+import { esDispositivoAdmin, getPermisosDispositivo } from "../lib/acceso";
 import { Badge, Spinner } from "../components/ui";
 
 export default function Inicio() {
@@ -13,17 +13,33 @@ export default function Inicio() {
     ["areas", "bases", "incidencias", "trabajadores", "vehiculos"],
     []
   );
-
   const [q, setQ] = useState("");
   const [res, setRes] = useState(null);
   const [buscando, setBuscando] = useState(false);
   const [admin, setAdmin] = useState(false);
-  useEffect(() => setAdmin(esDispositivoAdmin()), []);
+  const [permisos, setPermisos] = useState([]);
+  const [cargandoPermisos, setCargandoPermisos] = useState(true);
+
+  useEffect(() => {
+    setAdmin(esDispositivoAdmin());
+    cargarPermisos();
+  }, []);
+
+  async function cargarPermisos() {
+    setCargandoPermisos(true);
+    const p = await getPermisosDispositivo();
+    setPermisos(p);
+    setCargandoPermisos(false);
+  }
+
   const totalPendientes = (areas || []).reduce((s, a) => s + (a.pendientes || 0), 0);
 
   async function buscar(texto) {
     setQ(texto);
-    if (texto.trim().length < 2) { setRes(null); return; }
+    if (texto.trim().length < 2) {
+      setRes(null);
+      return;
+    }
     setBuscando(true);
     const like = `%${texto.trim()}%`;
     const orInc = `descripcion.ilike.${like},tipo.ilike.${like}`;
@@ -44,6 +60,23 @@ export default function Inicio() {
       incidencias: inc.data || [],
     });
     setBuscando(false);
+  }
+
+  // Helper para verificar si tiene permiso
+  function tienePermiso(permiso) {
+    return admin || permisos.includes(permiso);
+  }
+
+  if (cargandoPermisos) {
+    return (
+      <main className="pb-24">
+        <div className="px-4 pt-[calc(env(safe-area-inset-top)+20px)] pb-2">
+          <p className="text-accent text-xs font-bold tracking-widest uppercase">Consola operativa</p>
+          <h1 className="title text-4xl font-extrabold leading-none mt-1">Espartanos</h1>
+        </div>
+        <Spinner />
+      </main>
+    );
   }
 
   return (
@@ -105,7 +138,7 @@ export default function Inicio() {
           })}
           {!buscando &&
             !res.bases.length && !res.trabajadores.length && !res.vehiculos.length && !(res.incidencias || []).length && (
-              <p className="text-mut text-sm py-4 text-center">Sin resultados para “{q}”.</p>
+              <p className="text-mut text-sm py-4 text-center">Sin resultados para "{q}".</p>
             )}
         </div>
       )}
@@ -115,50 +148,56 @@ export default function Inicio() {
         <div className="px-4 mt-6">
           <p className="text-mut text-xs font-bold uppercase tracking-wider mb-3">Apartados</p>
           <div className="grid gap-3">
-            <Link
-              href="/comite-empresa"
-              className="tap block bg-panel border border-line rounded-2xl p-4 active:scale-[.98] transition-transform"
-            >
-              <div className="flex items-center gap-3">
-                <div className="text-3xl">🤝</div>
-                <h2 className="title text-2xl font-bold">Comité de Empresa</h2>
-              </div>
-            </Link>
-            <Link
-              href="/comite-seguridad"
-              className="tap block bg-panel border border-line rounded-2xl p-4 active:scale-[.98] transition-transform"
-            >
-              <div className="flex items-center gap-3">
-                <div className="text-3xl">⛑️</div>
-                <h2 className="title text-2xl font-bold leading-none">Comité de Seguridad y Salud</h2>
-              </div>
-            </Link>
-            <Link
-              href="/areas"
-              className="tap block bg-panel border border-line rounded-2xl p-4 active:scale-[.98] transition-transform"
-            >
-              <div className="flex items-center justify-between">
+            {tienePermiso("comite_empresa") && (
+              <Link
+                href="/comite-empresa"
+                className="tap block bg-panel border border-line rounded-2xl p-4 active:scale-[.98] transition-transform"
+              >
                 <div className="flex items-center gap-3">
-                  <div className="text-3xl">🗺️</div>
-                  <h2 className="title text-2xl font-bold">Áreas</h2>
+                  <div className="text-3xl">🤝</div>
+                  <h2 className="title text-2xl font-bold">Comité de Empresa</h2>
                 </div>
-                {totalPendientes > 0 && <Badge tone="accent">{totalPendientes}</Badge>}
+              </Link>
+            )}
+            {tienePermiso("comite_seguridad") && (
+              <Link
+                href="/comite-seguridad"
+                className="tap block bg-panel border border-line rounded-2xl p-4 active:scale-[.98] transition-transform"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="text-3xl">⛑️</div>
+                  <h2 className="title text-2xl font-bold leading-none">Comité de Seguridad y Salud</h2>
+                </div>
+              </Link>
+            )}
+            {tienePermiso("areas") && (
+              <Link
+                href="/areas"
+                className="tap block bg-panel border border-line rounded-2xl p-4 active:scale-[.98] transition-transform"
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="text-3xl">🗺️</div>
+                    <h2 className="title text-2xl font-bold">Áreas</h2>
+                  </div>
+                  {totalPendientes > 0 && <Badge tone="accent">{totalPendientes}</Badge>}
+                </div>
+              </Link>
+            )}
+          </div>
+          {tienePermiso("sugerencias") && (
+            <Link
+              href="/sugerencias"
+              className="tap flex items-center gap-3 mt-6 bg-panel border border-line rounded-2xl p-4 active:scale-[.98] transition-transform"
+            >
+              <div className="text-2xl">💬</div>
+              <div>
+                <h2 className="font-bold leading-tight">Sugerencias</h2>
+                <p className="text-mut text-xs mt-0.5">Enviar idea o reportar un fallo</p>
               </div>
             </Link>
-          </div>
-
-          <Link
-            href="/sugerencias"
-            className="tap flex items-center gap-3 mt-6 bg-panel border border-line rounded-2xl p-4 active:scale-[.98] transition-transform"
-          >
-            <div className="text-2xl">💬</div>
-            <div>
-              <h2 className="font-bold leading-tight">Sugerencias</h2>
-              <p className="text-mut text-xs mt-0.5">Enviar idea o reportar un fallo</p>
-            </div>
-          </Link>
-
-          {admin && (
+          )}
+          {tienePermiso("admin") && (
             <Link
               href="/exportar"
               className="tap flex items-center gap-3 mt-3 bg-panel border border-line rounded-2xl p-4 active:scale-[.98] transition-transform"
@@ -170,8 +209,7 @@ export default function Inicio() {
               </div>
             </Link>
           )}
-
-          {admin && (
+          {tienePermiso("admin") && (
             <Link
               href="/admin"
               className="tap flex items-center gap-3 mt-3 bg-panel border border-line rounded-2xl p-4 active:scale-[.98] transition-transform"
