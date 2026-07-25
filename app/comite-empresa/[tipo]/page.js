@@ -7,9 +7,8 @@ import {
   crearDocumentoEmpresa,
   actualizarDocumentoEmpresa,
   borrarDocumentoEmpresa,
-  crearIncidenciaEmpresa,
-  getIncidenciasEmpresa,
 } from "../../../lib/data";
+import { supabase } from "../../../lib/supabase";
 
 export default function ComiteEmpresaTipoPage({ params }) {
   const tipo = params.tipo;
@@ -25,7 +24,6 @@ export default function ComiteEmpresaTipoPage({ params }) {
     delegado_nombre: "",
     juzgado: "",
     numero_sentencia: "",
-    tipo_incidencia: "",
   });
   const [archivo, setArchivo] = useState(null);
 
@@ -36,13 +34,8 @@ export default function ComiteEmpresaTipoPage({ params }) {
   async function cargarDatos() {
     setCargando(true);
     try {
-      let data = [];
-      if (tipo === "incidencias") {
-        data = await getIncidenciasEmpresa();
-      } else {
-        const tabla = tipo === "convenio" ? "convenio_empresa" : tipo.replace("-", "_") + "_empresa";
-        data = await getDocumentosEmpresa(tabla);
-      }
+      const tabla = tipo === "convenio" ? "convenio_empresa" : tipo.replace("-", "_") + "_empresa";
+      const data = await getDocumentosEmpresa(tabla);
       setDatos(data);
     } catch (error) {
       console.error("Error cargando datos:", error);
@@ -56,19 +49,7 @@ export default function ComiteEmpresaTipoPage({ params }) {
     try {
       const tabla = tipo === "convenio" ? "convenio_empresa" : tipo.replace("-", "_") + "_empresa";
       
-      if (tipo === "incidencias") {
-        if (editandoId) {
-          // Actualizar incidencia
-          const payload = {
-            descripcion: formData.descripcion,
-            tipo: formData.tipo_incidencia,
-          };
-          const { error } = await supabase.from("incidencias_empresa").update(payload).eq("id", editandoId);
-          if (error) throw error;
-        } else {
-          await crearIncidenciaEmpresa(formData);
-        }
-      } else if (editandoId) {
+      if (editandoId) {
         await actualizarDocumentoEmpresa(tabla, editandoId, formData, archivo);
       } else {
         await crearDocumentoEmpresa(tabla, formData, archivo);
@@ -83,7 +64,6 @@ export default function ComiteEmpresaTipoPage({ params }) {
         delegado_nombre: "",
         juzgado: "",
         numero_sentencia: "",
-        tipo_incidencia: "",
       });
       setArchivo(null);
       cargarDatos();
@@ -102,7 +82,6 @@ export default function ComiteEmpresaTipoPage({ params }) {
       delegado_nombre: item.delegado_nombre || "",
       juzgado: item.juzgado || "",
       numero_sentencia: item.numero_sentencia || "",
-      tipo_incidencia: item.tipo || "",
     });
     setMostrarFormulario(true);
   }
@@ -110,7 +89,7 @@ export default function ComiteEmpresaTipoPage({ params }) {
   async function handleBorrar(id) {
     if (!confirm("¿Estás seguro de que quieres borrar este registro?")) return;
     try {
-      const tabla = tipo === "convenio" ? "convenio_empresa" : tipo === "incidencias" ? "incidencias_empresa" : tipo.replace("-", "_") + "_empresa";
+      const tabla = tipo === "convenio" ? "convenio_empresa" : tipo.replace("-", "_") + "_empresa";
       await borrarDocumentoEmpresa(tabla, id);
       cargarDatos();
     } catch (error) {
@@ -144,7 +123,6 @@ export default function ComiteEmpresaTipoPage({ params }) {
                 delegado_nombre: "",
                 juzgado: "",
                 numero_sentencia: "",
-                tipo_incidencia: "",
               });
               setArchivo(null);
             }
@@ -163,28 +141,14 @@ export default function ComiteEmpresaTipoPage({ params }) {
               {editandoId ? "Editar Registro" : "Nuevo Registro"}
             </h3>
             
-            {tipo !== "incidencias" && (
-              <input
-                type="text"
-                placeholder="Título"
-                required
-                value={formData.titulo}
-                onChange={(e) => setFormData({ ...formData, titulo: e.target.value })}
-                className="w-full p-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
-              />
-            )}
-            
-            {tipo === "incidencias" && (
-              <select
-                value={formData.tipo_incidencia}
-                onChange={(e) => setFormData({ ...formData, tipo_incidencia: e.target.value })}
-                className="w-full p-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
-              >
-                <option value="">Seleccionar Tipo</option>
-                <option value="Seguridad">Seguridad</option>
-                <option value="C.S.S.">C.S.S.</option>
-              </select>
-            )}
+            <input
+              type="text"
+              placeholder="Título"
+              required
+              value={formData.titulo}
+              onChange={(e) => setFormData({ ...formData, titulo: e.target.value })}
+              className="w-full p-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+            />
             
             <textarea
               placeholder="Descripción"
@@ -194,15 +158,13 @@ export default function ComiteEmpresaTipoPage({ params }) {
               className="w-full p-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all resize-none"
             />
             
-            {tipo !== "incidencias" && (
-              <input
-                type="date"
-                required
-                value={formData.fecha}
-                onChange={(e) => setFormData({ ...formData, fecha: e.target.value })}
-                className="w-full p-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
-              />
-            )}
+            <input
+              type="date"
+              required
+              value={formData.fecha}
+              onChange={(e) => setFormData({ ...formData, fecha: e.target.value })}
+              className="w-full p-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+            />
             
             {tipo === "informes-delegados" && (
               <input
@@ -233,18 +195,16 @@ export default function ComiteEmpresaTipoPage({ params }) {
               </>
             )}
             
-            {tipo !== "incidencias" && (
-              <div className="pt-2">
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Adjuntar archivo (opcional)
-                </label>
-                <input
-                  type="file"
-                  onChange={(e) => setArchivo(e.target.files[0])}
-                  className="w-full p-2 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 dark:file:bg-blue-900 dark:file:text-blue-200"
-                />
-              </div>
-            )}
+            <div className="pt-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Adjuntar archivo {editandoId ? "(deja en blanco para mantener el actual)" : "(opcional)"}
+              </label>
+              <input
+                type="file"
+                onChange={(e) => setArchivo(e.target.files[0])}
+                className="w-full p-2 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 dark:file:bg-blue-900 dark:file:text-blue-200"
+              />
+            </div>
             
             <button
               type="submit"
@@ -277,11 +237,6 @@ export default function ComiteEmpresaTipoPage({ params }) {
                         {new Date(item.fecha).toLocaleDateString()}
                       </p>
                     )}
-                    {item.tipo && (
-                      <span className="inline-block text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full mt-2">
-                        {item.tipo}
-                      </span>
-                    )}
                     {item.archivo_nombre && (
                       <a
                         href={item.archivo_url}
@@ -289,7 +244,7 @@ export default function ComiteEmpresaTipoPage({ params }) {
                         rel="noopener noreferrer"
                         className="text-blue-600 text-sm hover:underline inline-block mt-2"
                       >
-                        📎 {item.archivo_nombre}
+                         {item.archivo_nombre}
                       </a>
                     )}
                   </div>
@@ -306,7 +261,7 @@ export default function ComiteEmpresaTipoPage({ params }) {
                       className="text-red-600 hover:text-red-700 p-2"
                       title="Borrar"
                     >
-                      ️
+                      🗑️
                     </button>
                   </div>
                 </div>
