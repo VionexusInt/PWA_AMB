@@ -20,9 +20,12 @@ export default function IncidenciasPage() {
     []
   );
   const [filtro, setFiltro] = useState("pendientes"); // "pendientes" | "todas"
+  const [tipoF, setTipoF] = useState("Todos");
 
+  const TIPOS = ["Todos", "Seguridad", "Avería", "Personal", "Vehículo", "Otro"];
   const todas = data || [];
-  const items = filtro === "pendientes" ? todas.filter((i) => !i.resuelta) : todas;
+  let items = filtro === "pendientes" ? todas.filter((i) => !i.resuelta) : todas;
+  if (tipoF !== "Todos") items = items.filter((i) => i.tipo === tipoF);
   const nPend = todas.filter((i) => !i.resuelta).length;
 
   async function toggle(i) {
@@ -52,6 +55,21 @@ export default function IncidenciasPage() {
         ))}
       </div>
 
+      {/* Filtro por tipo */}
+      <div className="px-4 mt-2 flex gap-2 overflow-x-auto noscroll">
+        {TIPOS.map((t) => (
+          <button
+            key={t}
+            onClick={() => setTipoF(t)}
+            className={`tap px-3.5 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap border ${
+              tipoF === t ? "bg-ink text-base border-ink" : "bg-panel text-mut border-line"
+            }`}
+          >
+            {t}
+          </button>
+        ))}
+      </div>
+
       {loading ? (
         <Spinner />
       ) : (
@@ -65,6 +83,7 @@ export default function IncidenciasPage() {
                   i.resuelta ? "bg-panel border-line opacity-70" : "bg-panel border-accent/40"
                 }`}
               >
+                {i.tipo && <div className="mb-2"><Badge tone="accent">{i.tipo}</Badge></div>}
                 <div className="flex items-start justify-between gap-3">
                   <p className={i.resuelta ? "line-through text-mut" : "text-ink"}>{i.descripcion}</p>
                   <button

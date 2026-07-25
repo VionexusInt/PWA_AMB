@@ -6,10 +6,9 @@ import { useRealtime } from "../lib/useRealtime";
 import { supabase } from "../lib/supabase";
 import { esDispositivoAdmin } from "../lib/acceso";
 import { Badge, Spinner } from "../components/ui";
-import FormEntidad from "../components/FormEntidad";
 
 export default function Inicio() {
-  const { data: areas, loading, reload } = useRealtime(
+  const { data: areas } = useRealtime(
     getInicio,
     ["areas", "bases", "incidencias", "trabajadores", "vehiculos"],
     []
@@ -18,7 +17,6 @@ export default function Inicio() {
   const [q, setQ] = useState("");
   const [res, setRes] = useState(null);
   const [buscando, setBuscando] = useState(false);
-  const [form, setForm] = useState(null); // null | {modo, registro?}
   const [admin, setAdmin] = useState(false);
   useEffect(() => setAdmin(esDispositivoAdmin()), []);
   const totalPendientes = (areas || []).reduce((s, a) => s + (a.pendientes || 0), 0);
@@ -28,12 +26,23 @@ export default function Inicio() {
     if (texto.trim().length < 2) { setRes(null); return; }
     setBuscando(true);
     const like = `%${texto.trim()}%`;
-    const [b, t, v] = await Promise.all([
+    const orInc = `descripcion.ilike.${like},tipo.ilike.${like}`;
+    const [b, t, v, inc] = await Promise.all([
       supabase.from("bases").select("id, nombre, tipo").ilike("nombre", like).limit(8),
       supabase.from("trabajadores").select("id, nombre, base_id").ilike("nombre", like).limit(8),
       supabase.from("vehiculos").select("id, matricula, base_id").ilike("matricula", like).limit(8),
+      supabase
+        .from("incidencias")
+        .select("id, tipo, descripcion, base:bases(id,nombre), trabajador:trabajadores(id,nombre), vehiculo:vehiculos(id,matricula)")
+        .or(orInc)
+        .limit(8),
     ]);
-    setRes({ bases: b.data || [], trabajadores: t.data || [], vehiculos: v.data || [] });
+    setRes({
+      bases: b.data || [],
+      trabajadores: t.data || [],
+      vehiculos: v.data || [],
+      incidencias: inc.data || [],
+    });
     setBuscando(false);
   }
 
@@ -83,8 +92,19 @@ export default function Inicio() {
               <p className="font-semibold">{v.matricula}</p>
             </Link>
           ))}
+          {(res.incidencias || []).map((i) => {
+            const href = i.trabajador ? `/trabajador/${i.trabajador.id}`
+              : i.vehiculo ? `/vehiculo/${i.vehiculo.id}`
+              : i.base ? `/base/${i.base.id}` : "#";
+            return (
+              <Link key={"i" + i.id} href={href} className="tap block bg-panel2 border border-line rounded-xl px-4 py-3">
+                <span className="text-mut text-xs">Incidencia{i.tipo ? ` · ${i.tipo}` : ""}</span>
+                <p className="font-semibold line-clamp-1">{i.descripcion}</p>
+              </Link>
+            );
+          })}
           {!buscando &&
-            !res.bases.length && !res.trabajadores.length && !res.vehiculos.length && (
+            !res.bases.length && !res.trabajadores.length && !res.vehiculos.length && !(res.incidencias || []).length && (
               <p className="text-mut text-sm py-4 text-center">Sin resultados para “{q}”.</p>
             )}
         </div>
@@ -126,43 +146,39 @@ export default function Inicio() {
             {totalPendientes > 0 && <Badge tone="accent">{totalPendientes} sin resolver</Badge>}
           </Link>
 
-          <p className="text-mut text-xs font-bold uppercase tracking-wider mb-3">Áreas</p>
-          {loading ? (
-            <Spinner />
-          ) : (
-            <div className="grid gap-3">
-              {(areas || []).map((a) => (
-                <div key={a.id} className="relative">
-                  <Link
-                    href={`/area/${a.id}`}
-                    className="tap block bg-panel border border-line rounded-2xl p-4 pr-14 active:scale-[.98] transition-transform"
-                  >
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <h2 className="title text-2xl font-bold">{a.nombre}</h2>
-                        <p className="text-mut text-sm mt-0.5">{a.n_bases} bases</p>
-                      </div>
-                      {a.pendientes > 0 ? (
-                        <Badge tone="accent">{a.pendientes} incidencias</Badge>
-                      ) : (
-                        <Badge tone="ok">Sin incidencias</Badge>
-                      )}
-                    </div>
-                  </Link>
-                  <button
-                    onClick={() => setForm({ modo: "edit", registro: a })}
-                    aria-label="Editar área"
-                    className="tap absolute top-3 right-3 w-9 h-9 rounded-full grid place-items-center bg-panel2 border border-line text-mut active:scale-95"
-                  >
-                    ✎
-                  </button>
+          <p className="text-mut text-xs font-bold uppercase tracking-wider mb-3">Apartados</p>
+          <div className="grid gap-3">
+            <Link
+              href="/comite-empresa"
+              className="tap block bg-panel border border-line rounded-2xl p-4 active:scale-[.98] transition-transform"
+            >
+              <div className="flex items-center gap-3">
+                <div className="text-3xl">🤝</div>
+                <h2 className="title text-2xl font-bold">Comité de Empresa</h2>
+              </div>
+            </Link>
+            <Link
+              href="/comite-seguridad"
+              className="tap block bg-panel border border-line rounded-2xl p-4 active:scale-[.98] transition-transform"
+            >
+              <div className="flex items-center gap-3">
+                <div className="text-3xl">⛑️</div>
+                <h2 className="title text-2xl font-bold leading-none">Comité de Seguridad y Salud</h2>
+              </div>
+            </Link>
+            <Link
+              href="/areas"
+              className="tap block bg-panel border border-line rounded-2xl p-4 active:scale-[.98] transition-transform"
+            >
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="text-3xl">🗺️</div>
+                  <h2 className="title text-2xl font-bold">Áreas</h2>
                 </div>
-              ))}
-              {!(areas || []).length && (
-                <p className="text-mut text-center py-6">No hay áreas. Pulsa + para añadir.</p>
-              )}
-            </div>
-          )}
+                {totalPendientes > 0 && <Badge tone="accent">{totalPendientes}</Badge>}
+              </div>
+            </Link>
+          </div>
 
           <Link
             href="/sugerencias"
@@ -177,6 +193,19 @@ export default function Inicio() {
 
           {admin && (
             <Link
+              href="/exportar"
+              className="tap flex items-center gap-3 mt-3 bg-panel border border-line rounded-2xl p-4 active:scale-[.98] transition-transform"
+            >
+              <div className="text-2xl">📄</div>
+              <div>
+                <h2 className="font-bold leading-tight">Informes</h2>
+                <p className="text-mut text-xs mt-0.5">Exportar listados a PDF</p>
+              </div>
+            </Link>
+          )}
+
+          {admin && (
+            <Link
               href="/admin"
               className="tap flex items-center gap-3 mt-3 bg-panel border border-line rounded-2xl p-4 active:scale-[.98] transition-transform"
             >
@@ -188,27 +217,6 @@ export default function Inicio() {
             </Link>
           )}
         </div>
-      )}
-
-      {/* Botón flotante: añadir área */}
-      {!loading && !res && (
-        <button
-          onClick={() => setForm({ modo: "add" })}
-          className="tap fixed bottom-[calc(env(safe-area-inset-bottom)+18px)] right-5 w-14 h-14 rounded-full bg-accent text-white text-3xl grid place-items-center shadow-lg shadow-accent/30 active:scale-95"
-          aria-label="Añadir área"
-        >
-          +
-        </button>
-      )}
-
-      {form && (
-        <FormEntidad
-          tipo="area"
-          modo={form.modo}
-          registro={form.registro}
-          onClose={() => setForm(null)}
-          onSaved={() => { setForm(null); reload(); }}
-        />
       )}
     </main>
   );

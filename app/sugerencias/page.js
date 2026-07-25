@@ -23,6 +23,7 @@ export default function SugerenciasPage() {
 /* ---------- Formulario para enviar (lo ven todos) ---------- */
 function Enviar() {
   const [tipo, setTipo] = useState("Sugerencia");
+  const [tema, setTema] = useState("");
   const [texto, setTexto] = useState("");
   const [enviando, setEnviando] = useState(false);
   const [error, setError] = useState(null);
@@ -32,10 +33,11 @@ function Enviar() {
     if (!texto.trim()) { setError("Escribe tu mensaje."); return; }
     setEnviando(true); setError(null);
     const disp = typeof window !== "undefined" ? localStorage.getItem(KEY_CODIGO) : null;
-    const r = await addSugerencia(tipo, texto.trim(), disp);
+    const r = await addSugerencia(tipo, texto.trim(), disp, tema.trim() || null);
     setEnviando(false);
     if (r?.error) { setError(r.error.message); return; }
     setTexto("");
+    setTema("");
     setEnviado(true);
   }
 
@@ -73,6 +75,16 @@ function Enviar() {
           </button>
         ))}
       </div>
+
+      <label className="block mt-4">
+        <span className="text-mut text-sm">¿Sobre qué es?</span>
+        <input
+          value={tema}
+          onChange={(e) => setTema(e.target.value)}
+          placeholder="Ej: Incidencias, trabajadores, vehículos…"
+          className="mt-1 w-full bg-panel2 border border-line rounded-xl px-3 py-3 text-ink outline-none focus:border-accent"
+        />
+      </label>
 
       <label className="block mt-4">
         <span className="text-mut text-sm">
@@ -155,6 +167,7 @@ function ListaAdmin() {
             >
               <div className="flex items-center gap-2 flex-wrap mb-1">
                 {s.tipo === "Fallo" ? <Badge tone="accent">Fallo</Badge> : <Badge>Sugerencia</Badge>}
+                {s.tema && <Badge>{s.tema}</Badge>}
                 {s.atendida && <Badge tone="ok">Atendida</Badge>}
               </div>
               <p className={s.atendida ? "text-mut" : "text-ink"}>{s.texto}</p>

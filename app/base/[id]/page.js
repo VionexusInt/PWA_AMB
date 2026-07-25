@@ -174,6 +174,7 @@ function ListaIncidencias({ items, onEdit, onToggle }) {
             i.resuelta ? "bg-panel border-line opacity-70" : "bg-panel border-accent/40"
           }`}
         >
+          {i.tipo && <div className="mb-2"><Badge tone="accent">{i.tipo}</Badge></div>}
           <div className="flex items-start justify-between gap-3">
             <p className={i.resuelta ? "line-through text-mut" : "text-ink"}>{i.descripcion}</p>
             <div className="flex items-center gap-2 shrink-0">
