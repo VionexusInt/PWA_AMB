@@ -29,6 +29,7 @@ export default function ComiteSeguridadTipoPage({ params }) {
     numero_sentencia: "",
     area_id: "",
     base_id: "",
+    tipo_incidencia: "",
   });
   const [archivo, setArchivo] = useState(null);
   const [areas, setAreas] = useState([]);
@@ -75,6 +76,15 @@ export default function ComiteSeguridadTipoPage({ params }) {
     try {
       if (tipo === "revaloracion-riesgos") {
         await crearRevaloracionRiesgo(formData, archivo);
+      } else if (tipo === "incidencias") {
+        const payload = {
+          descripcion: formData.descripcion,
+          fecha: formData.fecha,
+          tipo: formData.tipo_incidencia,
+          resuelta: false,
+        };
+        const { error } = await supabase.from("incidencias").insert([payload]);
+        if (error) throw error;
       } else {
         await crearDocumentoCSS(tipo.replace("-", "_"), formData, archivo);
       }
@@ -88,6 +98,7 @@ export default function ComiteSeguridadTipoPage({ params }) {
         numero_sentencia: "",
         area_id: "",
         base_id: "",
+        tipo_incidencia: "",
       });
       setArchivo(null);
       cargarDatos();
@@ -131,14 +142,12 @@ export default function ComiteSeguridadTipoPage({ params }) {
           </div>
         )}
 
-        {tipo !== "incidencias" && (
-          <button
-            onClick={() => setMostrarFormulario(!mostrarFormulario)}
-            className="w-full mb-4 bg-blue-600 text-white py-3 rounded-xl font-bold active:scale-[.98] transition-transform"
-          >
-            {mostrarFormulario ? "Cancelar" : "+ Nuevo Registro"}
-          </button>
-        )}
+        <button
+          onClick={() => setMostrarFormulario(!mostrarFormulario)}
+          className="w-full mb-4 bg-blue-600 text-white py-3 rounded-xl font-bold active:scale-[.98] transition-transform"
+        >
+          {mostrarFormulario ? "Cancelar" : "+ Nuevo Registro"}
+        </button>
 
         {mostrarFormulario && (
           <form
@@ -155,6 +164,19 @@ export default function ComiteSeguridadTipoPage({ params }) {
               }
               className="w-full p-3 bg-input border border-line rounded-xl"
             />
+            {tipo === "incidencias" && (
+              <select
+                value={formData.tipo_incidencia}
+                onChange={(e) =>
+                  setFormData({ ...formData, tipo_incidencia: e.target.value })
+                }
+                className="w-full p-3 bg-input border border-line rounded-xl"
+              >
+                <option value="">Seleccionar Tipo de Incidencia</option>
+                <option value="Seguridad">Seguridad</option>
+                <option value="C.S.S.">C.S.S.</option>
+              </select>
+            )}
             <textarea
               placeholder="Descripción"
               value={formData.descripcion}
