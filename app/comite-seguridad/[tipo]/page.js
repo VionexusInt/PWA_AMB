@@ -10,8 +10,6 @@ import {
   getRevaloracionRiesgos,
   crearRevaloracionRiesgo,
   getIncidencias,
-  actualizarIncidencia,
-  borrarIncidencia,
 } from "../../../lib/data";
 import { supabase } from "../../../lib/supabase";
 
@@ -93,12 +91,8 @@ export default function ComiteSeguridadTipoPage({ params }) {
           tipo: formData.tipo_incidencia,
           resuelta: false,
         };
-        if (editandoId) {
-          await actualizarIncidencia(editandoId, payload);
-        } else {
-          const { error } = await supabase.from("incidencias").insert([payload]);
-          if (error) throw error;
-        }
+        const { error } = await supabase.from("incidencias").insert([payload]);
+        if (error) throw error;
       } else {
         const tabla = tipo.replace("-", "_");
         if (editandoId) {
@@ -148,7 +142,8 @@ export default function ComiteSeguridadTipoPage({ params }) {
     if (!confirm("¿Estás seguro de que quieres borrar este registro?")) return;
     try {
       if (tipo === "incidencias") {
-        await borrarIncidencia(item.id);
+        const { error } = await supabase.from("incidencias").delete().eq("id", item.id);
+        if (error) throw error;
       } else if (tipo === "revaloracion-riesgos") {
         await borrarDocumentoCSS("revaloracion_riesgos", item.id);
       } else {
@@ -237,9 +232,7 @@ export default function ComiteSeguridadTipoPage({ params }) {
                 placeholder="Título"
                 required
                 value={formData.titulo}
-                onChange={(e) =>
-                  setFormData({ ...formData, titulo: e.target.value })
-                }
+                onChange={(e) => setFormData({ ...formData, titulo: e.target.value })}
                 className="w-full p-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
               />
             )}
@@ -247,9 +240,7 @@ export default function ComiteSeguridadTipoPage({ params }) {
             {tipo === "incidencias" && (
               <select
                 value={formData.tipo_incidencia}
-                onChange={(e) =>
-                  setFormData({ ...formData, tipo_incidencia: e.target.value })
-                }
+                onChange={(e) => setFormData({ ...formData, tipo_incidencia: e.target.value })}
                 className="w-full p-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
               >
                 <option value="">Seleccionar Tipo de Incidencia</option>
@@ -261,9 +252,7 @@ export default function ComiteSeguridadTipoPage({ params }) {
             <textarea
               placeholder="Descripción"
               value={formData.descripcion}
-              onChange={(e) =>
-                setFormData({ ...formData, descripcion: e.target.value })
-              }
+              onChange={(e) => setFormData({ ...formData, descripcion: e.target.value })}
               rows="3"
               className="w-full p-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all resize-none"
             />
@@ -273,9 +262,7 @@ export default function ComiteSeguridadTipoPage({ params }) {
                 type="date"
                 required
                 value={formData.fecha}
-                onChange={(e) =>
-                  setFormData({ ...formData, fecha: e.target.value })
-                }
+                onChange={(e) => setFormData({ ...formData, fecha: e.target.value })}
                 className="w-full p-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
               />
             )}
@@ -285,9 +272,7 @@ export default function ComiteSeguridadTipoPage({ params }) {
                 type="text"
                 placeholder="Nombre del delegado"
                 value={formData.delegado_nombre}
-                onChange={(e) =>
-                  setFormData({ ...formData, delegado_nombre: e.target.value })
-                }
+                onChange={(e) => setFormData({ ...formData, delegado_nombre: e.target.value })}
                 className="w-full p-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
               />
             )}
@@ -298,21 +283,14 @@ export default function ComiteSeguridadTipoPage({ params }) {
                   type="text"
                   placeholder="Juzgado"
                   value={formData.juzgado}
-                  onChange={(e) =>
-                    setFormData({ ...formData, juzgado: e.target.value })
-                  }
+                  onChange={(e) => setFormData({ ...formData, juzgado: e.target.value })}
                   className="w-full p-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
                 />
                 <input
                   type="text"
                   placeholder="Número de sentencia"
                   value={formData.numero_sentencia}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      numero_sentencia: e.target.value,
-                    })
-                  }
+                  onChange={(e) => setFormData({ ...formData, numero_sentencia: e.target.value })}
                   className="w-full p-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
                 />
               </>
@@ -321,9 +299,7 @@ export default function ComiteSeguridadTipoPage({ params }) {
             {tipo === "revaloracion-riesgos" && (
               <select
                 value={formData.area_id}
-                onChange={(e) =>
-                  setFormData({ ...formData, area_id: e.target.value })
-                }
+                onChange={(e) => setFormData({ ...formData, area_id: e.target.value })}
                 className="w-full p-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
               >
                 <option value="">Seleccionar Área</option>
@@ -401,7 +377,7 @@ export default function ComiteSeguridadTipoPage({ params }) {
                       className="text-yellow-600 hover:text-yellow-700 p-2"
                       title="Editar"
                     >
-                      ️
+                      ✏️
                     </button>
                     <button
                       onClick={() => handleBorrar(item)}
