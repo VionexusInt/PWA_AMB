@@ -117,10 +117,12 @@ export default function Inicio() {
           <div className="grid gap-3">
             <Link
               href="/comite-empresa"
-              className="bg-green-600 text-white p-6 rounded-xl shadow-md flex flex-col items-center justify-center"
+              className="tap block bg-panel border border-line rounded-2xl p-4 active:scale-[.98] transition-transform"
             >
-              <span className="text-3xl mb-2"></span>
-              <span className="font-bold">Comité Empresa</span>
+              <div className="flex items-center gap-3">
+                <div className="text-3xl">🤝</div>
+                <h2 className="title text-2xl font-bold">Comité de Empresa</h2>
+              </div>
             </Link>
             <Link
               href="/comite-seguridad"
