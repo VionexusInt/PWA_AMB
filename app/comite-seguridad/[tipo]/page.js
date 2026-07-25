@@ -1,4 +1,5 @@
 "use client";
+
 import { useState, useEffect } from "react";
 import { Header } from "../../../components/ui";
 import {
@@ -45,9 +46,20 @@ export default function ComiteSeguridadTipoPage({ params }) {
       if (tipo === "revaloracion-riesgos") {
         data = await getRevaloracionRiesgos();
       } else if (tipo === "incidencias") {
-        const filtroParam = filtroTipo === "todos" ? null : filtroTipo;
-        const incidencias = await getIncidencias(filtroParam);
-        data = incidencias || [];
+        // En CSS, solo mostramos incidencias de Seguridad y C.S.S.
+        if (filtroTipo === "todos") {
+          // Obtenemos ambas: Seguridad y C.S.S.
+          const [seguridadData, cssData] = await Promise.all([
+            getIncidencias("Seguridad"),
+            getIncidencias("C.S.S."),
+          ]);
+          data = [...(seguridadData || []), ...(cssData || [])];
+          // Ordenar por fecha descendente
+          data.sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
+        } else {
+          const incidencias = await getIncidencias(filtroTipo);
+          data = incidencias || [];
+        }
       } else {
         data = await getDocumentosCSS(tipo.replace("-", "_"));
       }
