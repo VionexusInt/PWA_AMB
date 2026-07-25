@@ -4,6 +4,7 @@ import Link from "next/link";
 import { getTodasIncidencias, resolverIncidencia } from "../../lib/data";
 import { useRealtime } from "../../lib/useRealtime";
 import { Header, Badge, Spinner } from "../../components/ui";
+import BotonPDFIncidencia from "../../components/BotonPDFIncidencia";
 
 // Devuelve el origen de una incidencia: tipo, nombre y enlace de acceso rápido
 function origen(i) {
@@ -86,14 +87,17 @@ export default function IncidenciasPage() {
                 {i.tipo && <div className="mb-2"><Badge tone="accent">{i.tipo}</Badge></div>}
                 <div className="flex items-start justify-between gap-3">
                   <p className={i.resuelta ? "line-through text-mut" : "text-ink"}>{i.descripcion}</p>
+                  <div className="flex items-center gap-2 shrink-0">
                   <button
                     onClick={() => toggle(i)}
-                    className={`tap shrink-0 text-xs font-bold px-3 py-1.5 rounded-full border ${
+                    className={`tap text-xs font-bold px-3 py-1.5 rounded-full border ${
                       i.resuelta ? "bg-panel2 text-mut border-line" : "bg-ok/15 text-ok border-ok/40"
                     }`}
                   >
                     {i.resuelta ? "Reabrir" : "Resolver"}
                   </button>
+                  <BotonPDFIncidencia incidencia={i} />
+                  </div>
                 </div>
 
                 {/* Origen + acceso rápido */}

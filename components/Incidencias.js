@@ -3,6 +3,7 @@ import { useState } from "react";
 import { resolverIncidencia } from "../lib/data";
 import { Badge } from "./ui";
 import FormEntidad from "./FormEntidad";
+import BotonPDFIncidencia from "./BotonPDFIncidencia";
 
 /**
  * Sección de incidencias reutilizable.
@@ -61,6 +62,7 @@ export default function Incidencias({ items, incField, parentId, onChange }) {
                   >
                     ✎
                   </button>
+                  <BotonPDFIncidencia incidencia={i} />
                 </div>
               </div>
               <p className="text-mut text-xs mt-2">

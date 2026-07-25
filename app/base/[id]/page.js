@@ -5,6 +5,7 @@ import { getBase, resolverIncidencia } from "../../../lib/data";
 import { useRealtime } from "../../../lib/useRealtime";
 import { Header, Badge, Spinner } from "../../../components/ui";
 import FormEntidad from "../../../components/FormEntidad";
+import BotonPDFIncidencia from "../../../components/BotonPDFIncidencia";
 
 const TABS = [
   { key: "trab", label: "Trabajadores" },
@@ -187,6 +188,7 @@ function ListaIncidencias({ items, onEdit, onToggle }) {
                 {i.resuelta ? "Reabrir" : "Resolver"}
               </button>
               <BotonEditar onClick={() => onEdit(i)} />
+              <BotonPDFIncidencia incidencia={i} />
             </div>
           </div>
           <p className="text-mut text-xs mt-2">

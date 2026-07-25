@@ -110,42 +110,9 @@ export default function Inicio() {
         </div>
       )}
 
-      {/* Accesos a listas globales + Áreas */}
+      {/* Apartados */}
       {!res && (
         <div className="px-4 mt-6">
-          <div className="grid grid-cols-2 gap-3 mb-3">
-            <Link
-              href="/trabajadores"
-              className="tap bg-panel border border-line rounded-2xl p-4 active:scale-[.98] transition-transform"
-            >
-              <div className="text-2xl mb-1">👤</div>
-              <h2 className="font-bold leading-tight">Trabajadores</h2>
-              <p className="text-mut text-xs mt-0.5">Ver todos</p>
-            </Link>
-            <Link
-              href="/vehiculos"
-              className="tap bg-panel border border-line rounded-2xl p-4 active:scale-[.98] transition-transform"
-            >
-              <div className="text-2xl mb-1">🚑</div>
-              <h2 className="font-bold leading-tight">Vehículos</h2>
-              <p className="text-mut text-xs mt-0.5">Ver todos</p>
-            </Link>
-          </div>
-
-          <Link
-            href="/incidencias"
-            className="tap flex items-center justify-between bg-panel border border-line rounded-2xl p-4 mb-6 active:scale-[.98] transition-transform"
-          >
-            <div className="flex items-center gap-3">
-              <div className="text-2xl">⚠️</div>
-              <div>
-                <h2 className="font-bold leading-tight">Incidencias</h2>
-                <p className="text-mut text-xs mt-0.5">Ver todas</p>
-              </div>
-            </div>
-            {totalPendientes > 0 && <Badge tone="accent">{totalPendientes} sin resolver</Badge>}
-          </Link>
-
           <p className="text-mut text-xs font-bold uppercase tracking-wider mb-3">Apartados</p>
           <div className="grid gap-3">
             <Link

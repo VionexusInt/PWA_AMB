@@ -13,7 +13,9 @@ export default function TrabajadoresPage() {
   );
   const [q, setQ] = useState("");
   const s = q.trim().toLowerCase();
-  const items = (data || []).filter((t) => (t.nombre || "").toLowerCase().includes(s));
+  const items = (data || []).filter(
+    (t) => (t.nombre || "").toLowerCase().includes(s) || (t.id_personal || "").toLowerCase().includes(s)
+  );
 
   return (
     <main className="pb-10">
@@ -26,7 +28,7 @@ export default function TrabajadoresPage() {
             value={q}
             onChange={(e) => setQ(e.target.value)}
             inputMode="search"
-            placeholder="Buscar por nombre…"
+            placeholder="Buscar por nombre o ID…"
             className="bg-transparent outline-none w-full text-ink placeholder:text-mut"
           />
           {q && <button onClick={() => setQ("")} className="text-mut text-lg tap" aria-label="Limpiar">×</button>}
