@@ -4,10 +4,13 @@ import Link from "next/link";
 import { Header } from "../../components/ui";
 
 const secciones = [
+  { id: "convenio", nombre: "Convenio", icono: "📋" },
   { id: "reglamentos", nombre: "Reglamento", icono: "📜" },
   { id: "actas", nombre: "Actas", icono: "📝" },
   { id: "denuncias", nombre: "Denuncias", icono: "⚠️" },
+  { id: "sentencias", nombre: "Sentencias", icono: "⚖️" },
   { id: "informes-delegados", nombre: "Informes Delegados", icono: "📊" },
+  { id: "incidencias", nombre: "Incidencias", icono: "🚨" },
 ];
 
 export default function ComiteEmpresaPage() {
