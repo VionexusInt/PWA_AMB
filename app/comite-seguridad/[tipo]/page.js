@@ -7,15 +7,19 @@ import {
   crearDocumentoCSS,
   getRevaloracionRiesgos,
   crearRevaloracionRiesgo,
-  getIncidencias, 
+  getIncidencias,
 } from "../../../lib/data";
-import { supabase } from "../../../lib/supabase"; 
+import { supabase } from "../../../lib/supabase";
 
 export default function ComiteSeguridadTipoPage({ params }) {
   const tipo = params.tipo;
   const [datos, setDatos] = useState([]);
   const [cargando, setCargando] = useState(true);
   const [mostrarFormulario, setMostrarFormulario] = useState(false);
+  
+  // Estado para el filtro de incidencias
+  const [filtroTipo, setFiltroTipo] = useState("todos"); 
+
   const [formData, setFormData] = useState({
     titulo: "",
     descripcion: "",
@@ -28,14 +32,13 @@ export default function ComiteSeguridadTipoPage({ params }) {
   });
   const [archivo, setArchivo] = useState(null);
   const [areas, setAreas] = useState([]);
-  const [bases, setBases] = useState([]);
 
   useEffect(() => {
     cargarDatos();
     if (tipo === "revaloracion-riesgos") {
       cargarAreasYBases();
     }
-  }, [tipo]);
+  }, [tipo, filtroTipo]); // Añadido filtroTipo a las dependencias
 
   async function cargarDatos() {
     setCargando(true);
@@ -44,7 +47,9 @@ export default function ComiteSeguridadTipoPage({ params }) {
       if (tipo === "revaloracion-riesgos") {
         data = await getRevaloracionRiesgos();
       } else if (tipo === "incidencias") {
-        const incidencias = await getIncidencias();
+        // Pasamos el filtro si no es "todos"
+        const filtroParam = filtroTipo === "todos" ? null : filtroTipo;
+        const incidencias = await getIncidencias(filtroParam);
         data = incidencias || [];
       } else {
         data = await getDocumentosCSS(tipo.replace("-", "_"));
@@ -102,6 +107,26 @@ export default function ComiteSeguridadTipoPage({ params }) {
       <Header titulo={tituloPagina} back />
 
       <div className="px-4 mt-6">
+        
+        {/* FILTRO DE INCIDENCIAS */}
+        {tipo === "incidencias" && (
+          <div className="flex gap-2 mb-4">
+            {["todos", "Seguridad", "CSS"].map((opcion) => (
+              <button
+                key={opcion}
+                onClick={() => setFiltroTipo(opcion)}
+                className={`flex-1 py-2 rounded-xl font-bold text-sm transition-colors ${
+                  filtroTipo === opcion
+                    ? "bg-blue-600 text-white"
+                    : "bg-panel border border-line text-mut"
+                }`}
+              >
+                {opcion === "todos" ? "Todas" : opcion}
+              </button>
+            ))}
+          </div>
+        )}
+
         {tipo !== "incidencias" && (
           <button
             onClick={() => setMostrarFormulario(!mostrarFormulario)}
@@ -183,22 +208,20 @@ export default function ComiteSeguridadTipoPage({ params }) {
             )}
 
             {tipo === "revaloracion-riesgos" && (
-              <>
-                <select
-                  value={formData.area_id}
-                  onChange={(e) =>
-                    setFormData({ ...formData, area_id: e.target.value })
-                  }
-                  className="w-full p-3 bg-input border border-line rounded-xl"
-                >
-                  <option value="">Seleccionar Área</option>
-                  {areas.map((area) => (
-                    <option key={area.id} value={area.id}>
-                      {area.nombre}
-                    </option>
-                  ))}
-                </select>
-              </>
+              <select
+                value={formData.area_id}
+                onChange={(e) =>
+                  setFormData({ ...formData, area_id: e.target.value })
+                }
+                className="w-full p-3 bg-input border border-line rounded-xl"
+              >
+                <option value="">Seleccionar Área</option>
+                {areas.map((area) => (
+                  <option key={area.id} value={area.id}>
+                    {area.nombre}
+                  </option>
+                ))}
+              </select>
             )}
 
             <input
@@ -217,7 +240,7 @@ export default function ComiteSeguridadTipoPage({ params }) {
         )}
 
         {cargando ? (
-          <p className="text-center text-mut">Cargando...</p>
+          <p className="text-center text-mut mt-4">Cargando...</p>
         ) : (
           <div className="space-y-3">
             {datos.map((item) => (
@@ -225,15 +248,25 @@ export default function ComiteSeguridadTipoPage({ params }) {
                 key={item.id}
                 className="bg-panel border border-line rounded-2xl p-4"
               >
-                <h3 className="font-bold text-lg">
-                  {item.titulo || item.descripcion || "Sin título"}
-                </h3>
+                <div className="flex justify-between items-start">
+                  <h3 className="font-bold text-lg">
+                    {item.titulo || item.descripcion || "Sin título"}
+                  </h3>
+                  {item.tipo && (
+                    <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full">
+                      {item.tipo}
+                    </span>
+                  )}
+                </div>
+                
                 {item.descripcion && (
                   <p className="text-mut text-sm mt-1">{item.descripcion}</p>
                 )}
+                
                 <p className="text-mut text-xs mt-2">
                   {new Date(item.fecha).toLocaleDateString()}
                 </p>
+                
                 {item.archivo_nombre && (
                   <a
                     href={item.archivo_url}
@@ -247,7 +280,7 @@ export default function ComiteSeguridadTipoPage({ params }) {
               </div>
             ))}
             {datos.length === 0 && (
-              <p className="text-center text-mut">No hay registros aún.</p>
+              <p className="text-center text-mut mt-4">No hay registros aún.</p>
             )}
           </div>
         )}

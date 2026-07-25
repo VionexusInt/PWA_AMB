@@ -1,8 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { Header } from "../../components/ui";
 import Link from "next/link";
+import { Header } from "../../components/ui";
 
 const secciones = [
   { id: "reglamentos", nombre: "Reglamento", icono: "📜" },
@@ -10,8 +9,8 @@ const secciones = [
   { id: "denuncias", nombre: "Denuncias", icono: "⚠️" },
   { id: "informes-delegados", nombre: "Informes Delegados", icono: "📊" },
   { id: "sentencias", nombre: "Sentencias", icono: "⚖️" },
-  { id: "revaloracion-riesgos", nombre: "Revaloración Riesgos", icono: "🔄" },
-  { id: "incidencias", nombre: "Incidencias CSS", icono: "🚑" },
+  { id: "revaloracion-riesgos", nombre: "Evaluación de riesgos", icono: "🔄" }, // CAMBIADO
+  { id: "incidencias", nombre: "Incidencias CSS", icono: "" },
 ];
 
 export default function ComiteSeguridadPage() {
