@@ -1,5 +1,4 @@
 "use client";
-
 import { useState, useEffect } from "react";
 import { Header } from "../../../components/ui";
 import {
@@ -16,9 +15,7 @@ export default function ComiteSeguridadTipoPage({ params }) {
   const [datos, setDatos] = useState([]);
   const [cargando, setCargando] = useState(true);
   const [mostrarFormulario, setMostrarFormulario] = useState(false);
-  
-  // Estado para el filtro de incidencias
-  const [filtroTipo, setFiltroTipo] = useState("todos"); 
+  const [filtroTipo, setFiltroTipo] = useState("todos");
 
   const [formData, setFormData] = useState({
     titulo: "",
@@ -39,7 +36,7 @@ export default function ComiteSeguridadTipoPage({ params }) {
     if (tipo === "revaloracion-riesgos") {
       cargarAreasYBases();
     }
-  }, [tipo, filtroTipo]); // Añadido filtroTipo a las dependencias
+  }, [tipo, filtroTipo]);
 
   async function cargarDatos() {
     setCargando(true);
@@ -48,7 +45,6 @@ export default function ComiteSeguridadTipoPage({ params }) {
       if (tipo === "revaloracion-riesgos") {
         data = await getRevaloracionRiesgos();
       } else if (tipo === "incidencias") {
-        // Pasamos el filtro si no es "todos"
         const filtroParam = filtroTipo === "todos" ? null : filtroTipo;
         const incidencias = await getIncidencias(filtroParam);
         data = incidencias || [];
@@ -120,9 +116,7 @@ export default function ComiteSeguridadTipoPage({ params }) {
   return (
     <main className="pb-16">
       <Header titulo={tituloPagina} back />
-
       <div className="px-4 mt-6">
-        
         {/* FILTRO DE INCIDENCIAS */}
         {tipo === "incidencias" && (
           <div className="flex gap-2 mb-4">
@@ -152,8 +146,11 @@ export default function ComiteSeguridadTipoPage({ params }) {
         {mostrarFormulario && (
           <form
             onSubmit={handleSubmit}
-            className="bg-panel border border-line rounded-2xl p-4 mb-6 space-y-3"
+            className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl p-5 mb-6 space-y-4 shadow-sm"
           >
+            <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">
+              Nuevo Registro
+            </h3>
             <input
               type="text"
               placeholder="Título"
@@ -162,7 +159,7 @@ export default function ComiteSeguridadTipoPage({ params }) {
               onChange={(e) =>
                 setFormData({ ...formData, titulo: e.target.value })
               }
-              className="w-full p-3 bg-input border border-line rounded-xl"
+              className="w-full p-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
             />
             {tipo === "incidencias" && (
               <select
@@ -170,7 +167,7 @@ export default function ComiteSeguridadTipoPage({ params }) {
                 onChange={(e) =>
                   setFormData({ ...formData, tipo_incidencia: e.target.value })
                 }
-                className="w-full p-3 bg-input border border-line rounded-xl"
+                className="w-full p-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
               >
                 <option value="">Seleccionar Tipo de Incidencia</option>
                 <option value="Seguridad">Seguridad</option>
@@ -183,7 +180,8 @@ export default function ComiteSeguridadTipoPage({ params }) {
               onChange={(e) =>
                 setFormData({ ...formData, descripcion: e.target.value })
               }
-              className="w-full p-3 bg-input border border-line rounded-xl"
+              rows="3"
+              className="w-full p-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all resize-none"
             />
             <input
               type="date"
@@ -192,9 +190,8 @@ export default function ComiteSeguridadTipoPage({ params }) {
               onChange={(e) =>
                 setFormData({ ...formData, fecha: e.target.value })
               }
-              className="w-full p-3 bg-input border border-line rounded-xl"
+              className="w-full p-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
             />
-
             {tipo === "informes-delegados" && (
               <input
                 type="text"
@@ -203,10 +200,9 @@ export default function ComiteSeguridadTipoPage({ params }) {
                 onChange={(e) =>
                   setFormData({ ...formData, delegado_nombre: e.target.value })
                 }
-                className="w-full p-3 bg-input border border-line rounded-xl"
+                className="w-full p-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
               />
             )}
-
             {tipo === "sentencias" && (
               <>
                 <input
@@ -216,7 +212,7 @@ export default function ComiteSeguridadTipoPage({ params }) {
                   onChange={(e) =>
                     setFormData({ ...formData, juzgado: e.target.value })
                   }
-                  className="w-full p-3 bg-input border border-line rounded-xl"
+                  className="w-full p-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
                 />
                 <input
                   type="text"
@@ -228,18 +224,17 @@ export default function ComiteSeguridadTipoPage({ params }) {
                       numero_sentencia: e.target.value,
                     })
                   }
-                  className="w-full p-3 bg-input border border-line rounded-xl"
+                  className="w-full p-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
                 />
               </>
             )}
-
             {tipo === "revaloracion-riesgos" && (
               <select
                 value={formData.area_id}
                 onChange={(e) =>
                   setFormData({ ...formData, area_id: e.target.value })
                 }
-                className="w-full p-3 bg-input border border-line rounded-xl"
+                className="w-full p-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
               >
                 <option value="">Seleccionar Área</option>
                 {areas.map((area) => (
@@ -249,18 +244,21 @@ export default function ComiteSeguridadTipoPage({ params }) {
                 ))}
               </select>
             )}
-
-            <input
-              type="file"
-              onChange={(e) => setArchivo(e.target.files[0])}
-              className="w-full p-3 bg-input border border-line rounded-xl"
-            />
-
+            <div className="pt-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Adjuntar archivo (opcional)
+              </label>
+              <input
+                type="file"
+                onChange={(e) => setArchivo(e.target.files[0])}
+                className="w-full p-2 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 dark:file:bg-blue-900 dark:file:text-blue-200"
+              />
+            </div>
             <button
               type="submit"
-              className="w-full bg-green-600 text-white py-3 rounded-xl font-bold active:scale-[.98] transition-transform"
+              className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-xl font-bold active:scale-[.98] transition-all shadow-md mt-2"
             >
-              Guardar
+              Guardar Registro
             </button>
           </form>
         )}
@@ -284,15 +282,12 @@ export default function ComiteSeguridadTipoPage({ params }) {
                     </span>
                   )}
                 </div>
-                
                 {item.descripcion && (
                   <p className="text-mut text-sm mt-1">{item.descripcion}</p>
                 )}
-                
                 <p className="text-mut text-xs mt-2">
                   {new Date(item.fecha).toLocaleDateString()}
                 </p>
-                
                 {item.archivo_nombre && (
                   <a
                     href={item.archivo_url}
