@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { Header } from "../../../components/ui";
+import VisorArchivo from "../../../components/VisorArchivo";
 import {
   getDocumentosCSS,
   crearDocumentoCSS,
@@ -20,6 +21,7 @@ export default function ComiteSeguridadTipoPage({ params }) {
   const [mostrarFormulario, setMostrarFormulario] = useState(false);
   const [filtroTipo, setFiltroTipo] = useState("todos");
   const [editandoId, setEditandoId] = useState(null);
+  const [visor, setVisor] = useState(null);
 
   const [formData, setFormData] = useState({
     titulo: "",
@@ -361,14 +363,13 @@ export default function ComiteSeguridadTipoPage({ params }) {
                       </span>
                     )}
                     {item.archivo_nombre && (
-                      <a
-                        href={item.archivo_url}
-                        target="_blank"
-                        rel="noopener noreferrer"
+                      <button
+                        type="button"
+                        onClick={() => setVisor({ url: item.archivo_url, nombre: item.archivo_nombre })}
                         className="text-blue-600 text-sm hover:underline inline-block mt-2"
                       >
                         📎 {item.archivo_nombre}
-                      </a>
+                      </button>
                     )}
                   </div>
                   <div className="flex gap-1 ml-3">
@@ -396,6 +397,9 @@ export default function ComiteSeguridadTipoPage({ params }) {
           </div>
         )}
       </div>
-    </main>
+    {visor && (
+        <VisorArchivo url={visor.url} nombre={visor.nombre} tipo={visor.tipo} onClose={() => setVisor(null)} />
+      )}
+      </main>
   );
 }

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { Header } from "../../../components/ui";
+import VisorArchivo from "../../../components/VisorArchivo";
 import {
   getDocumentosEmpresa,
   crearDocumentoEmpresa,
@@ -16,6 +17,7 @@ export default function ComiteEmpresaTipoPage({ params }) {
   const [cargando, setCargando] = useState(true);
   const [mostrarFormulario, setMostrarFormulario] = useState(false);
   const [editandoId, setEditandoId] = useState(null);
+  const [visor, setVisor] = useState(null);
 
   const [formData, setFormData] = useState({
     titulo: "",
@@ -238,14 +240,13 @@ export default function ComiteEmpresaTipoPage({ params }) {
                       </p>
                     )}
                     {item.archivo_nombre && (
-                      <a
-                        href={item.archivo_url}
-                        target="_blank"
-                        rel="noopener noreferrer"
+                      <button
+                        type="button"
+                        onClick={() => setVisor({ url: item.archivo_url, nombre: item.archivo_nombre })}
                         className="text-blue-600 text-sm hover:underline inline-block mt-2"
                       >
-                         {item.archivo_nombre}
-                      </a>
+                        📎 {item.archivo_nombre}
+                      </button>
                     )}
                   </div>
                   <div className="flex gap-2 ml-3">
@@ -273,6 +274,9 @@ export default function ComiteEmpresaTipoPage({ params }) {
           </div>
         )}
       </div>
-    </main>
+    {visor && (
+        <VisorArchivo url={visor.url} nombre={visor.nombre} tipo={visor.tipo} onClose={() => setVisor(null)} />
+      )}
+      </main>
   );
 }
