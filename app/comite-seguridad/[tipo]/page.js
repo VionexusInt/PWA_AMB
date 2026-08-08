@@ -3,6 +3,8 @@
 import { useState, useEffect } from "react";
 import { Header } from "../../../components/ui";
 import VisorArchivo from "../../../components/VisorArchivo";
+import AdjuntosCSS from "../../../components/AdjuntosCSS";
+import BotonTraspaso from "../../../components/BotonTraspaso";
 import {
   getDocumentosCSS,
   crearDocumentoCSS,
@@ -10,7 +12,9 @@ import {
   borrarDocumentoCSS,
   getRevaloracionRiesgos,
   crearRevaloracionRiesgo,
+  actualizarRevaloracionRiesgo,
   getIncidencias,
+  subirCSSAdjuntoMulti,
 } from "../../../lib/data";
 import { supabase } from "../../../lib/supabase";
 
@@ -22,6 +26,7 @@ export default function ComiteSeguridadTipoPage({ params }) {
   const [filtroTipo, setFiltroTipo] = useState("todos");
   const [editandoId, setEditandoId] = useState(null);
   const [visor, setVisor] = useState(null);
+  const [guardando, setGuardando] = useState(false);
 
   const [formData, setFormData] = useState({
     titulo: "",
@@ -34,8 +39,15 @@ export default function ComiteSeguridadTipoPage({ params }) {
     base_id: "",
     tipo_incidencia: "",
   });
-  const [archivo, setArchivo] = useState(null);
+
+  // Adjuntos: los que ya existían (archivo único antiguo) + los que se van a subir al guardar
+  const [legadoActual, setLegadoActual] = useState(null); // { url, nombre }
+  const [pendientes, setPendientes] = useState([]); // File[]
+
   const [areas, setAreas] = useState([]);
+
+  const tablaActual = tipo === "revaloracion-riesgos" ? "revaloracion_riesgos" : tipo.replace("-", "_");
+  const tieneAdjuntos = tipo !== "incidencias";
 
   useEffect(() => {
     cargarDatos();
@@ -81,11 +93,25 @@ export default function ComiteSeguridadTipoPage({ params }) {
     setAreas(areasData || []);
   }
 
+  async function subirPendientes(idRegistro) {
+    for (const f of pendientes) {
+      await subirCSSAdjuntoMulti(tablaActual, idRegistro, f);
+    }
+  }
+
   async function handleSubmit(e) {
     e.preventDefault();
+    setGuardando(true);
     try {
+      let idRegistro = editandoId;
+
       if (tipo === "revaloracion-riesgos") {
-        await crearRevaloracionRiesgo(formData, archivo);
+        if (editandoId) {
+          await actualizarRevaloracionRiesgo(editandoId, formData);
+        } else {
+          const creado = await crearRevaloracionRiesgo(formData, null);
+          idRegistro = creado?.[0]?.id;
+        }
       } else if (tipo === "incidencias") {
         const payload = {
           descripcion: formData.descripcion,
@@ -98,29 +124,24 @@ export default function ComiteSeguridadTipoPage({ params }) {
       } else {
         const tabla = tipo.replace("-", "_");
         if (editandoId) {
-          await actualizarDocumentoCSS(tabla, editandoId, formData, archivo);
+          await actualizarDocumentoCSS(tabla, editandoId, formData, null);
         } else {
-          await crearDocumentoCSS(tabla, formData, archivo);
+          const creado = await crearDocumentoCSS(tabla, formData, null);
+          idRegistro = creado?.[0]?.id;
         }
       }
-      setMostrarFormulario(false);
-      setEditandoId(null);
-      setFormData({
-        titulo: "",
-        descripcion: "",
-        fecha: new Date().toISOString().split("T")[0],
-        delegado_nombre: "",
-        juzgado: "",
-        numero_sentencia: "",
-        area_id: "",
-        base_id: "",
-        tipo_incidencia: "",
-      });
-      setArchivo(null);
+
+      if (tieneAdjuntos && idRegistro && pendientes.length) {
+        await subirPendientes(idRegistro);
+      }
+
+      resetFormulario();
       cargarDatos();
     } catch (error) {
       console.error("Error al guardar:", error);
       alert("Hubo un error al guardar.");
+    } finally {
+      setGuardando(false);
     }
   }
 
@@ -137,6 +158,8 @@ export default function ComiteSeguridadTipoPage({ params }) {
       base_id: item.base_id || "",
       tipo_incidencia: item.tipo || "",
     });
+    setLegadoActual(item.archivo_nombre ? { url: item.archivo_url, nombre: item.archivo_nombre } : null);
+    setPendientes([]);
     setMostrarFormulario(true);
   }
 
@@ -172,7 +195,8 @@ export default function ComiteSeguridadTipoPage({ params }) {
       base_id: "",
       tipo_incidencia: "",
     });
-    setArchivo(null);
+    setLegadoActual(null);
+    setPendientes([]);
   }
 
   let tituloPagina = tipo
@@ -313,24 +337,24 @@ export default function ComiteSeguridadTipoPage({ params }) {
               </select>
             )}
 
-            {tipo !== "incidencias" && (
-              <div className="pt-2">
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Adjuntar archivo {editandoId ? "(deja en blanco para mantener el actual)" : "(opcional)"}
-                </label>
-                <input
-                  type="file"
-                  onChange={(e) => setArchivo(e.target.files[0])}
-                  className="w-full p-2 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 dark:file:bg-blue-900 dark:file:text-blue-200"
-                />
-              </div>
+            {tieneAdjuntos && (
+              <AdjuntosCSS
+                tabla={tablaActual}
+                registroId={editandoId}
+                legado={legadoActual}
+                pendientes={pendientes}
+                setPendientes={setPendientes}
+                onLegadoBorrado={() => { setLegadoActual(null); cargarDatos(); }}
+                onAbrir={setVisor}
+              />
             )}
 
             <button
               type="submit"
-              className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-xl font-bold active:scale-[.98] transition-all shadow-md mt-2"
+              disabled={guardando}
+              className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-xl font-bold active:scale-[.98] transition-all shadow-md mt-2 disabled:opacity-50"
             >
-              {editandoId ? "Actualizar" : "Guardar"} Registro
+              {guardando ? "Guardando..." : (editandoId ? "Actualizar" : "Guardar") + " Registro"}
             </button>
           </form>
         )}
@@ -373,6 +397,7 @@ export default function ComiteSeguridadTipoPage({ params }) {
                     )}
                   </div>
                   <div className="flex gap-1 ml-3">
+                    <BotonTraspaso tabla={tablaActual} registroId={item.id} onTraspasado={cargarDatos} />
                     <button
                       onClick={() => handleEditar(item)}
                       className="text-yellow-600 hover:text-yellow-700 p-2"
@@ -397,9 +422,9 @@ export default function ComiteSeguridadTipoPage({ params }) {
           </div>
         )}
       </div>
-    {visor && (
+      {visor && (
         <VisorArchivo url={visor.url} nombre={visor.nombre} tipo={visor.tipo} onClose={() => setVisor(null)} />
       )}
-      </main>
+    </main>
   );
 }

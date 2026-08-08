@@ -3,13 +3,15 @@
 import { useState, useEffect } from "react";
 import { Header } from "../../../components/ui";
 import VisorArchivo from "../../../components/VisorArchivo";
+import AdjuntosCSS from "../../../components/AdjuntosCSS";
+import BotonTraspaso from "../../../components/BotonTraspaso";
 import {
   getDocumentosEmpresa,
   crearDocumentoEmpresa,
   actualizarDocumentoEmpresa,
   borrarDocumentoEmpresa,
+  subirCSSAdjuntoMulti,
 } from "../../../lib/data";
-import { supabase } from "../../../lib/supabase";
 
 export default function ComiteEmpresaTipoPage({ params }) {
   const tipo = params.tipo;
@@ -18,6 +20,7 @@ export default function ComiteEmpresaTipoPage({ params }) {
   const [mostrarFormulario, setMostrarFormulario] = useState(false);
   const [editandoId, setEditandoId] = useState(null);
   const [visor, setVisor] = useState(null);
+  const [guardando, setGuardando] = useState(false);
 
   const [formData, setFormData] = useState({
     titulo: "",
@@ -27,7 +30,11 @@ export default function ComiteEmpresaTipoPage({ params }) {
     juzgado: "",
     numero_sentencia: "",
   });
-  const [archivo, setArchivo] = useState(null);
+
+  const [legadoActual, setLegadoActual] = useState(null); // { url, nombre }
+  const [pendientes, setPendientes] = useState([]); // File[]
+
+  const tablaActual = tipo === "convenio" ? "convenio_empresa" : tipo.replace("-", "_") + "_empresa";
 
   useEffect(() => {
     cargarDatos();
@@ -36,8 +43,7 @@ export default function ComiteEmpresaTipoPage({ params }) {
   async function cargarDatos() {
     setCargando(true);
     try {
-      const tabla = tipo === "convenio" ? "convenio_empresa" : tipo.replace("-", "_") + "_empresa";
-      const data = await getDocumentosEmpresa(tabla);
+      const data = await getDocumentosEmpresa(tablaActual);
       setDatos(data);
     } catch (error) {
       console.error("Error cargando datos:", error);
@@ -48,30 +54,30 @@ export default function ComiteEmpresaTipoPage({ params }) {
 
   async function handleSubmit(e) {
     e.preventDefault();
+    setGuardando(true);
     try {
-      const tabla = tipo === "convenio" ? "convenio_empresa" : tipo.replace("-", "_") + "_empresa";
-      
+      let idRegistro = editandoId;
+
       if (editandoId) {
-        await actualizarDocumentoEmpresa(tabla, editandoId, formData, archivo);
+        await actualizarDocumentoEmpresa(tablaActual, editandoId, formData, null);
       } else {
-        await crearDocumentoEmpresa(tabla, formData, archivo);
+        const creado = await crearDocumentoEmpresa(tablaActual, formData, null);
+        idRegistro = creado?.[0]?.id;
       }
-      
-      setMostrarFormulario(false);
-      setEditandoId(null);
-      setFormData({
-        titulo: "",
-        descripcion: "",
-        fecha: new Date().toISOString().split("T")[0],
-        delegado_nombre: "",
-        juzgado: "",
-        numero_sentencia: "",
-      });
-      setArchivo(null);
+
+      if (idRegistro && pendientes.length) {
+        for (const f of pendientes) {
+          await subirCSSAdjuntoMulti(tablaActual, idRegistro, f);
+        }
+      }
+
+      resetFormulario();
       cargarDatos();
     } catch (error) {
       console.error("Error al guardar:", error);
       alert("Hubo un error al guardar.");
+    } finally {
+      setGuardando(false);
     }
   }
 
@@ -85,14 +91,30 @@ export default function ComiteEmpresaTipoPage({ params }) {
       juzgado: item.juzgado || "",
       numero_sentencia: item.numero_sentencia || "",
     });
+    setLegadoActual(item.archivo_nombre ? { url: item.archivo_url, nombre: item.archivo_nombre } : null);
+    setPendientes([]);
     setMostrarFormulario(true);
+  }
+
+  function resetFormulario() {
+    setMostrarFormulario(false);
+    setEditandoId(null);
+    setFormData({
+      titulo: "",
+      descripcion: "",
+      fecha: new Date().toISOString().split("T")[0],
+      delegado_nombre: "",
+      juzgado: "",
+      numero_sentencia: "",
+    });
+    setLegadoActual(null);
+    setPendientes([]);
   }
 
   async function handleBorrar(id) {
     if (!confirm("¿Estás seguro de que quieres borrar este registro?")) return;
     try {
-      const tabla = tipo === "convenio" ? "convenio_empresa" : tipo.replace("-", "_") + "_empresa";
-      await borrarDocumentoEmpresa(tabla, id);
+      await borrarDocumentoEmpresa(tablaActual, id);
       cargarDatos();
     } catch (error) {
       console.error("Error al borrar:", error);
@@ -115,18 +137,10 @@ export default function ComiteEmpresaTipoPage({ params }) {
       <div className="px-4 mt-6">
         <button
           onClick={() => {
-            setMostrarFormulario(!mostrarFormulario);
             if (mostrarFormulario) {
-              setEditandoId(null);
-              setFormData({
-                titulo: "",
-                descripcion: "",
-                fecha: new Date().toISOString().split("T")[0],
-                delegado_nombre: "",
-                juzgado: "",
-                numero_sentencia: "",
-              });
-              setArchivo(null);
+              resetFormulario();
+            } else {
+              setMostrarFormulario(true);
             }
           }}
           className="w-full mb-4 bg-blue-600 text-white py-3 rounded-xl font-bold active:scale-[.98] transition-transform"
@@ -142,7 +156,7 @@ export default function ComiteEmpresaTipoPage({ params }) {
             <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">
               {editandoId ? "Editar Registro" : "Nuevo Registro"}
             </h3>
-            
+
             <input
               type="text"
               placeholder="Título"
@@ -151,7 +165,7 @@ export default function ComiteEmpresaTipoPage({ params }) {
               onChange={(e) => setFormData({ ...formData, titulo: e.target.value })}
               className="w-full p-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
             />
-            
+
             <textarea
               placeholder="Descripción"
               value={formData.descripcion}
@@ -159,7 +173,7 @@ export default function ComiteEmpresaTipoPage({ params }) {
               rows="3"
               className="w-full p-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all resize-none"
             />
-            
+
             <input
               type="date"
               required
@@ -167,7 +181,7 @@ export default function ComiteEmpresaTipoPage({ params }) {
               onChange={(e) => setFormData({ ...formData, fecha: e.target.value })}
               className="w-full p-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
             />
-            
+
             {tipo === "informes-delegados" && (
               <input
                 type="text"
@@ -177,7 +191,7 @@ export default function ComiteEmpresaTipoPage({ params }) {
                 className="w-full p-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
               />
             )}
-            
+
             {tipo === "sentencias" && (
               <>
                 <input
@@ -196,23 +210,23 @@ export default function ComiteEmpresaTipoPage({ params }) {
                 />
               </>
             )}
-            
-            <div className="pt-2">
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Adjuntar archivo {editandoId ? "(deja en blanco para mantener el actual)" : "(opcional)"}
-              </label>
-              <input
-                type="file"
-                onChange={(e) => setArchivo(e.target.files[0])}
-                className="w-full p-2 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 dark:file:bg-blue-900 dark:file:text-blue-200"
-              />
-            </div>
-            
+
+            <AdjuntosCSS
+              tabla={tablaActual}
+              registroId={editandoId}
+              legado={legadoActual}
+              pendientes={pendientes}
+              setPendientes={setPendientes}
+              onLegadoBorrado={() => { setLegadoActual(null); cargarDatos(); }}
+              onAbrir={setVisor}
+            />
+
             <button
               type="submit"
-              className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-xl font-bold active:scale-[.98] transition-all shadow-md mt-2"
+              disabled={guardando}
+              className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-xl font-bold active:scale-[.98] transition-all shadow-md mt-2 disabled:opacity-50"
             >
-              {editandoId ? "Actualizar" : "Guardar"} Registro
+              {guardando ? "Guardando..." : (editandoId ? "Actualizar" : "Guardar") + " Registro"}
             </button>
           </form>
         )}
@@ -250,6 +264,7 @@ export default function ComiteEmpresaTipoPage({ params }) {
                     )}
                   </div>
                   <div className="flex gap-2 ml-3">
+                    <BotonTraspaso tabla={tablaActual} registroId={item.id} onTraspasado={cargarDatos} />
                     <button
                       onClick={() => handleEditar(item)}
                       className="text-yellow-600 hover:text-yellow-700 p-2"
@@ -274,9 +289,9 @@ export default function ComiteEmpresaTipoPage({ params }) {
           </div>
         )}
       </div>
-    {visor && (
+      {visor && (
         <VisorArchivo url={visor.url} nombre={visor.nombre} tipo={visor.tipo} onClose={() => setVisor(null)} />
       )}
-      </main>
+    </main>
   );
 }
