@@ -14,6 +14,11 @@ import {
   crearProtocolo,
   actualizarProtocolo,
   borrarProtocolo,
+  getPropuestas,
+  crearPropuesta,
+  actualizarPropuesta,
+  marcarPropuestaRealizada,
+  borrarPropuesta,
   getRevaloracionRiesgos,
   crearRevaloracionRiesgo,
   actualizarRevaloracionRiesgo,
@@ -50,7 +55,7 @@ export default function ComiteSeguridadTipoPage({ params }) {
 
   const [areas, setAreas] = useState([]);
 
-  const tablaActual = tipo === "revaloracion-riesgos" ? "revaloracion_riesgos" : tipo === "protocolos" ? "protocolos" : tipo.replace("-", "_");
+  const tablaActual = tipo === "revaloracion-riesgos" ? "revaloracion_riesgos" : tipo === "protocolos" ? "protocolos" : tipo === "propuestas" ? "propuestas" : tipo.replace("-", "_");
   const tieneAdjuntos = tipo !== "incidencias";
 
   useEffect(() => {
@@ -80,6 +85,9 @@ export default function ComiteSeguridadTipoPage({ params }) {
         }
       } else if (tipo === "protocolos") {
         const { data: d } = await getProtocolos("protocolos");
+        data = d || [];
+      } else if (tipo === "propuestas") {
+        const { data: d } = await getPropuestas("propuestas");
         data = d || [];
       } else {
         data = await getDocumentosCSS(tipo.replace("-", "_"));
@@ -137,6 +145,14 @@ export default function ComiteSeguridadTipoPage({ params }) {
             const { data: c } = await crearProtocolo("protocolos", campos);
             idRegistro = c?.id;
           }
+        } else if (tipo === "propuestas") {
+          const campos = { titulo: formData.titulo, descripcion: formData.descripcion, fecha: formData.fecha || null };
+          if (editandoId) {
+            await actualizarPropuesta("propuestas", editandoId, campos);
+          } else {
+            const { data: c } = await crearPropuesta("propuestas", campos);
+            idRegistro = c?.id;
+          }
         } else {
           const tabla = tipo.replace("-", "_");
           if (editandoId) {
@@ -190,6 +206,8 @@ export default function ComiteSeguridadTipoPage({ params }) {
         await borrarDocumentoCSS("revaloracion_riesgos", item.id);
       } else if (tipo === "protocolos") {
         await borrarProtocolo("protocolos", item.id);
+      } else if (tipo === "propuestas") {
+        await borrarPropuesta("propuestas", item.id);
       } else {
         await borrarDocumentoCSS(tipo.replace("-", "_"), item.id);
       }
@@ -415,22 +433,20 @@ export default function ComiteSeguridadTipoPage({ params }) {
                       </button>
                     )}
                   </div>
-                  <div className="flex gap-1 ml-3">
-                    <BotonTraspaso tabla={tablaActual} registroId={item.id} onTraspasado={cargarDatos} />
-                    <button
-                      onClick={() => handleEditar(item)}
-                      className="text-yellow-600 hover:text-yellow-700 p-2"
-                      title="Editar"
-                    >
-                      ✏️
-                    </button>
-                    <button
-                      onClick={() => handleBorrar(item)}
-                      className="text-red-600 hover:text-red-700 p-2"
-                      title="Borrar"
-                    >
-                      🗑️
-                    </button>
+                  <div className="flex gap-1 ml-3 flex-col items-end">
+                    {tipo === "propuestas" && (
+                      <button
+                        onClick={async () => { await marcarPropuestaRealizada("propuestas", item.id, !item.realizada); cargarDatos(); }}
+                        className={`text-xs font-bold px-2 py-1 rounded-full border ${item.realizada ? "bg-panel2 text-mut border-line" : "bg-green-50 text-green-700 border-green-300"}`}
+                      >
+                        {item.realizada ? "↩ Pendiente" : "✓ Realizada"}
+                      </button>
+                    )}
+                    <div className="flex gap-1">
+                      <BotonTraspaso tabla={tablaActual} registroId={item.id} onTraspasado={cargarDatos} />
+                      <button onClick={() => handleEditar(item)} className="text-yellow-600 hover:text-yellow-700 p-2" title="Editar">✏️</button>
+                      <button onClick={() => handleBorrar(item)} className="text-red-600 hover:text-red-700 p-2" title="Borrar">🗑️</button>
+                    </div>
                   </div>
                 </div>
               </div>

@@ -12,6 +12,7 @@ const secciones = [
   { id: "revaloracion-riesgos", nombre: "Evaluación de riesgos", icono: "🔄" }, // CAMBIADO
   { id: "incidencias", nombre: "Incidencias CSS", icono: "" },
   { id: "protocolos", nombre: "Protocolos y Procedimientos", icono: "📁" },
+  { id: "propuestas", nombre: "Propuestas", icono: "💡" },
 ];
 
 export default function ComiteSeguridadPage() {

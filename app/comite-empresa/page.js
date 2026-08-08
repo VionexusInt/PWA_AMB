@@ -12,6 +12,7 @@ const secciones = [
   { id: "informes-delegados", nombre: "Informes Delegados", icono: "📊" },
   { id: "incidencias", nombre: "Incidencias", icono: "🚨" },
   { id: "protocolos", nombre: "Protocolos y Procedimientos", icono: "📁" },
+  { id: "propuestas", nombre: "Propuestas", icono: "💡" },
 ];
 
 export default function ComiteEmpresaPage() {

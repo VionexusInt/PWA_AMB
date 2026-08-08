@@ -15,6 +15,11 @@ import {
   crearProtocolo,
   actualizarProtocolo,
   borrarProtocolo,
+  getPropuestas,
+  crearPropuesta,
+  actualizarPropuesta,
+  marcarPropuestaRealizada,
+  borrarPropuesta,
 } from "../../../lib/data";
 
 export default function ComiteEmpresaTipoPage({ params }) {
@@ -38,7 +43,7 @@ export default function ComiteEmpresaTipoPage({ params }) {
   const [legadoActual, setLegadoActual] = useState(null); // { url, nombre }
   const [pendientes, setPendientes] = useState([]); // File[]
 
-  const tablaActual = tipo === "protocolos" ? "protocolos_empresa" : tipo === "convenio" ? "convenio_empresa" : tipo.replace("-", "_") + "_empresa";
+  const tablaActual = tipo === "protocolos" ? "protocolos_empresa" : tipo === "propuestas" ? "propuestas_empresa" : tipo === "convenio" ? "convenio_empresa" : tipo.replace("-", "_") + "_empresa";
 
   useEffect(() => {
     cargarDatos();
@@ -68,6 +73,14 @@ export default function ComiteEmpresaTipoPage({ params }) {
           await actualizarProtocolo("protocolos_empresa", editandoId, campos);
         } else {
           const { data: c } = await crearProtocolo("protocolos_empresa", campos);
+          idRegistro = c?.id;
+        }
+      } else if (tipo === "propuestas") {
+        const campos = { titulo: formData.titulo, descripcion: formData.descripcion, fecha: formData.fecha || null };
+        if (editandoId) {
+          await actualizarPropuesta("propuestas_empresa", editandoId, campos);
+        } else {
+          const { data: c } = await crearPropuesta("propuestas_empresa", campos);
           idRegistro = c?.id;
         }
       } else if (editandoId) {
@@ -128,6 +141,8 @@ export default function ComiteEmpresaTipoPage({ params }) {
     try {
       if (tipo === "protocolos") {
         await borrarProtocolo("protocolos_empresa", id);
+      } else if (tipo === "propuestas") {
+        await borrarPropuesta("propuestas_empresa", id);
       } else {
         await borrarDocumentoEmpresa(tablaActual, id);
       }
@@ -279,22 +294,20 @@ export default function ComiteEmpresaTipoPage({ params }) {
                       </button>
                     )}
                   </div>
-                  <div className="flex gap-2 ml-3">
-                    <BotonTraspaso tabla={tablaActual} registroId={item.id} onTraspasado={cargarDatos} />
-                    <button
-                      onClick={() => handleEditar(item)}
-                      className="text-yellow-600 hover:text-yellow-700 p-2"
-                      title="Editar"
-                    >
-                      ✏️
-                    </button>
-                    <button
-                      onClick={() => handleBorrar(item.id)}
-                      className="text-red-600 hover:text-red-700 p-2"
-                      title="Borrar"
-                    >
-                      🗑️
-                    </button>
+                  <div className="flex gap-2 ml-3 flex-col items-end">
+                    {tipo === "propuestas" && (
+                      <button
+                        onClick={async () => { await marcarPropuestaRealizada("propuestas_empresa", item.id, !item.realizada); cargarDatos(); }}
+                        className={`text-xs font-bold px-2 py-1 rounded-full border ${item.realizada ? "bg-panel2 text-mut border-line" : "bg-green-50 text-green-700 border-green-300"}`}
+                      >
+                        {item.realizada ? "↩ Pendiente" : "✓ Realizada"}
+                      </button>
+                    )}
+                    <div className="flex gap-1">
+                      <BotonTraspaso tabla={tablaActual} registroId={item.id} onTraspasado={cargarDatos} />
+                      <button onClick={() => handleEditar(item)} className="text-yellow-600 hover:text-yellow-700 p-2" title="Editar">✏️</button>
+                      <button onClick={() => handleBorrar(item.id)} className="text-red-600 hover:text-red-700 p-2" title="Borrar">🗑️</button>
+                    </div>
                   </div>
                 </div>
               </div>
