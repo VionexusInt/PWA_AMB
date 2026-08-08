@@ -93,12 +93,12 @@ main { animation: fadeIn .28s ease; }
 input[type="date"],
 input[type="datetime-local"],
 input[type="time"] {
-  color-scheme: dark;
-  color: #eef2f7;
-  -webkit-text-fill-color: #eef2f7;
+  color-scheme: light;
+  color: #111827 !important;
+  -webkit-text-fill-color: #111827 !important;
+  background-color: #f3f4f6 !important;
 }
 
-/* Android Chrome: forzar color en el valor del picker */
 input[type="date"]::-webkit-datetime-edit,
 input[type="datetime-local"]::-webkit-datetime-edit,
 input[type="date"]::-webkit-datetime-edit-fields-wrapper,
@@ -113,8 +113,8 @@ input[type="datetime-local"]::-webkit-datetime-edit-month-field,
 input[type="datetime-local"]::-webkit-datetime-edit-year-field,
 input[type="datetime-local"]::-webkit-datetime-edit-hour-field,
 input[type="datetime-local"]::-webkit-datetime-edit-minute-field {
-  color: #eef2f7;
-  -webkit-text-fill-color: #eef2f7;
+  color: #111827 !important;
+  -webkit-text-fill-color: #111827 !important;
 }
 @media print {
   body::before { display: none !important; }
