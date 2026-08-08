@@ -10,6 +10,10 @@ import {
   crearDocumentoCSS,
   actualizarDocumentoCSS,
   borrarDocumentoCSS,
+  getProtocolos,
+  crearProtocolo,
+  actualizarProtocolo,
+  borrarProtocolo,
   getRevaloracionRiesgos,
   crearRevaloracionRiesgo,
   actualizarRevaloracionRiesgo,
@@ -46,7 +50,7 @@ export default function ComiteSeguridadTipoPage({ params }) {
 
   const [areas, setAreas] = useState([]);
 
-  const tablaActual = tipo === "revaloracion-riesgos" ? "revaloracion_riesgos" : tipo.replace("-", "_");
+  const tablaActual = tipo === "revaloracion-riesgos" ? "revaloracion_riesgos" : tipo === "protocolos" ? "protocolos" : tipo.replace("-", "_");
   const tieneAdjuntos = tipo !== "incidencias";
 
   useEffect(() => {
@@ -74,6 +78,9 @@ export default function ComiteSeguridadTipoPage({ params }) {
           const incidencias = await getIncidencias(filtroTipo);
           data = incidencias || [];
         }
+      } else if (tipo === "protocolos") {
+        const { data: d } = await getProtocolos("protocolos");
+        data = d || [];
       } else {
         data = await getDocumentosCSS(tipo.replace("-", "_"));
       }
@@ -122,12 +129,22 @@ export default function ComiteSeguridadTipoPage({ params }) {
         const { error } = await supabase.from("incidencias").insert([payload]);
         if (error) throw error;
       } else {
-        const tabla = tipo.replace("-", "_");
-        if (editandoId) {
-          await actualizarDocumentoCSS(tabla, editandoId, formData, null);
+        if (tipo === "protocolos") {
+          const campos = { titulo: formData.titulo, descripcion: formData.descripcion, fecha: formData.fecha || null };
+          if (editandoId) {
+            await actualizarProtocolo("protocolos", editandoId, campos);
+          } else {
+            const { data: c } = await crearProtocolo("protocolos", campos);
+            idRegistro = c?.id;
+          }
         } else {
-          const creado = await crearDocumentoCSS(tabla, formData, null);
-          idRegistro = creado?.[0]?.id;
+          const tabla = tipo.replace("-", "_");
+          if (editandoId) {
+            await actualizarDocumentoCSS(tabla, editandoId, formData, null);
+          } else {
+            const creado = await crearDocumentoCSS(tabla, formData, null);
+            idRegistro = creado?.[0]?.id;
+          }
         }
       }
 
@@ -171,6 +188,8 @@ export default function ComiteSeguridadTipoPage({ params }) {
         if (error) throw error;
       } else if (tipo === "revaloracion-riesgos") {
         await borrarDocumentoCSS("revaloracion_riesgos", item.id);
+      } else if (tipo === "protocolos") {
+        await borrarProtocolo("protocolos", item.id);
       } else {
         await borrarDocumentoCSS(tipo.replace("-", "_"), item.id);
       }

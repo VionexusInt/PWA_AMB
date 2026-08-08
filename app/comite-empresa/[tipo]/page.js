@@ -11,6 +11,10 @@ import {
   actualizarDocumentoEmpresa,
   borrarDocumentoEmpresa,
   subirCSSAdjuntoMulti,
+  getProtocolos,
+  crearProtocolo,
+  actualizarProtocolo,
+  borrarProtocolo,
 } from "../../../lib/data";
 
 export default function ComiteEmpresaTipoPage({ params }) {
@@ -34,7 +38,7 @@ export default function ComiteEmpresaTipoPage({ params }) {
   const [legadoActual, setLegadoActual] = useState(null); // { url, nombre }
   const [pendientes, setPendientes] = useState([]); // File[]
 
-  const tablaActual = tipo === "convenio" ? "convenio_empresa" : tipo.replace("-", "_") + "_empresa";
+  const tablaActual = tipo === "protocolos" ? "protocolos_empresa" : tipo === "convenio" ? "convenio_empresa" : tipo.replace("-", "_") + "_empresa";
 
   useEffect(() => {
     cargarDatos();
@@ -58,7 +62,15 @@ export default function ComiteEmpresaTipoPage({ params }) {
     try {
       let idRegistro = editandoId;
 
-      if (editandoId) {
+      if (tipo === "protocolos") {
+        const campos = { titulo: formData.titulo, descripcion: formData.descripcion, fecha: formData.fecha || null };
+        if (editandoId) {
+          await actualizarProtocolo("protocolos_empresa", editandoId, campos);
+        } else {
+          const { data: c } = await crearProtocolo("protocolos_empresa", campos);
+          idRegistro = c?.id;
+        }
+      } else if (editandoId) {
         await actualizarDocumentoEmpresa(tablaActual, editandoId, formData, null);
       } else {
         const creado = await crearDocumentoEmpresa(tablaActual, formData, null);
@@ -114,7 +126,11 @@ export default function ComiteEmpresaTipoPage({ params }) {
   async function handleBorrar(id) {
     if (!confirm("¿Estás seguro de que quieres borrar este registro?")) return;
     try {
-      await borrarDocumentoEmpresa(tablaActual, id);
+      if (tipo === "protocolos") {
+        await borrarProtocolo("protocolos_empresa", id);
+      } else {
+        await borrarDocumentoEmpresa(tablaActual, id);
+      }
       cargarDatos();
     } catch (error) {
       console.error("Error al borrar:", error);

@@ -11,6 +11,7 @@ const secciones = [
   { id: "sentencias", nombre: "Sentencias", icono: "⚖️" },
   { id: "informes-delegados", nombre: "Informes Delegados", icono: "📊" },
   { id: "incidencias", nombre: "Incidencias", icono: "🚨" },
+  { id: "protocolos", nombre: "Protocolos y Procedimientos", icono: "📁" },
 ];
 
 export default function ComiteEmpresaPage() {

@@ -11,6 +11,7 @@ const secciones = [
   { id: "sentencias", nombre: "Sentencias", icono: "⚖️" },
   { id: "revaloracion-riesgos", nombre: "Evaluación de riesgos", icono: "🔄" }, // CAMBIADO
   { id: "incidencias", nombre: "Incidencias CSS", icono: "" },
+  { id: "protocolos", nombre: "Protocolos y Procedimientos", icono: "📁" },
 ];
 
 export default function ComiteSeguridadPage() {
