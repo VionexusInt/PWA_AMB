@@ -45,7 +45,8 @@ export default function Inicio() {
     const orInc = `descripcion.ilike.${like},tipo.ilike.${like}`;
     const [b, t, v, inc] = await Promise.all([
       supabase.from("bases").select("id, nombre, tipo").ilike("nombre", like).limit(8),
-      supabase.from("trabajadores").select("id, nombre, base_id").ilike("nombre", like).limit(8),
+      supabase.from("trabajadores").select("id, nombre, base_id, id_personal")
+        .or(`nombre.ilike.${like},id_personal.ilike.${like}`).limit(8),
       supabase.from("vehiculos").select("id, matricula, base_id").ilike("matricula", like).limit(8),
       supabase
         .from("incidencias")
@@ -116,8 +117,8 @@ export default function Inicio() {
             </Link>
           ))}
           {res.trabajadores.map((t) => (
-            <Link key={"t" + t.id} href={`/base/${t.base_id}`} className="tap block bg-panel2 border border-line rounded-xl px-4 py-3">
-              <span className="text-mut text-xs">Trabajador</span>
+            <Link key={"t" + t.id} href={`/trabajador/${t.id}`} className="tap block bg-panel2 border border-line rounded-xl px-4 py-3">
+              <span className="text-mut text-xs">Trabajador{t.id_personal ? ` · ID ${t.id_personal}` : ""}</span>
               <p className="font-semibold">{t.nombre}</p>
             </Link>
           ))}
