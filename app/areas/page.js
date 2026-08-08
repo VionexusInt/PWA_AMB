@@ -33,6 +33,15 @@ export default function AreasPage() {
             <p className="text-mut text-xs mt-0.5">Ver todos</p>
           </Link>
         </div>
+        <Link href="/bolsa" className="tap flex items-center justify-between bg-panel border border-line rounded-2xl p-4 active:scale-[.98] transition-transform">
+          <div className="flex items-center gap-3">
+            <div className="text-2xl">📋</div>
+            <div>
+              <h2 className="font-bold leading-tight">Bolsa de trabajadores</h2>
+              <p className="text-mut text-xs mt-0.5">Despedidos y pendientes de readmisión</p>
+            </div>
+          </div>
+        </Link>
         <Link href="/incidencias" className="tap flex items-center justify-between bg-panel border border-line rounded-2xl p-4 active:scale-[.98] transition-transform">
           <div className="flex items-center gap-3">
             <div className="text-2xl">⚠️</div>

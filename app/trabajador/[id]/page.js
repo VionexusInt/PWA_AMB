@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { getTrabajador, getAreasConBases, transferirTrabajador } from "../../../lib/data";
+import { getTrabajador, getAreasConBases, transferirTrabajador, mandarABolsa } from "../../../lib/data";
 import { useRealtime } from "../../../lib/useRealtime";
 import { Header, Badge, Spinner } from "../../../components/ui";
 import FormEntidad from "../../../components/FormEntidad";
@@ -16,6 +16,7 @@ export default function TrabajadorPage({ params }) {
   );
   const [editar, setEditar] = useState(false);
   const [transferir, setTransferir] = useState(false);
+  const [confirmarBolsa, setConfirmarBolsa] = useState(false);
   const t = data?.trabajador;
 
   if (!loading && !t) {
@@ -39,6 +40,7 @@ export default function TrabajadorPage({ params }) {
             <div className="flex items-center gap-2 flex-wrap mb-2">
               {t.id_personal && <Badge>ID {t.id_personal}</Badge>}
               {t.de_baja && <Badge tone="accent">De baja</Badge>}
+              {t.en_bolsa && <Badge tone="accent">En bolsa</Badge>}
               {t.tipo_contrato && <Badge>{t.tipo_contrato}</Badge>}
             </div>
             <p className="text-mut text-sm">
@@ -57,7 +59,43 @@ export default function TrabajadorPage({ params }) {
               >
                 Transferir
               </button>
+              {!t.en_bolsa && (
+                <button
+                  onClick={() => setConfirmarBolsa(true)}
+                  className="tap text-sm font-semibold px-4 py-2 rounded-xl bg-accent/10 border border-accent/30 text-accent active:scale-95"
+                >
+                  Mandar a la bolsa
+                </button>
+              )}
             </div>
+
+            {/* Confirmación de bolsa */}
+            {confirmarBolsa && (
+              <div className="mt-4 p-4 bg-accent/10 border border-accent/30 rounded-xl">
+                <p className="text-sm font-semibold mb-1">¿Mandar a la bolsa?</p>
+                <p className="text-mut text-xs mb-3">
+                  El trabajador desaparecerá de esta base. Sus incidencias se conservan. Podrás readmitirlo desde Áreas → Bolsa.
+                </p>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => setConfirmarBolsa(false)}
+                    className="tap flex-1 py-2 rounded-xl bg-panel2 border border-line text-sm font-semibold"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    onClick={async () => {
+                      await mandarABolsa(t.id, t.base_id);
+                      setConfirmarBolsa(false);
+                      reload();
+                    }}
+                    className="tap flex-1 py-2 rounded-xl bg-accent text-white text-sm font-semibold"
+                  >
+                    Confirmar
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Coches asignados */}
