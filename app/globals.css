@@ -89,21 +89,12 @@ main { animation: fadeIn .28s ease; }
 /* Spinner (usado por el componente de carga) */
 @keyframes spin { to { transform: rotate(360deg); } }
 
-/* Inputs de fecha: forzar color visible en Android (evita gris sobre blanco) */
+/* Inputs de fecha: siempre modo oscuro para que el texto sea visible en Android */
 input[type="date"],
 input[type="datetime-local"],
 input[type="time"] {
-  color: #111827;
-  color-scheme: light;
-}
-
-/* Dentro de formularios oscuros (panel2) recuperar el color claro */
-.bg-panel2 input[type="date"],
-.bg-panel2 input[type="datetime-local"],
-input[type="date"].dark-input,
-input[type="datetime-local"].dark-input {
-  color: #eef2f7;
   color-scheme: dark;
+  color: #eef2f7;
 }
 @media print {
   body::before { display: none !important; }

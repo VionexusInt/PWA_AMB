@@ -283,9 +283,9 @@ export default function ComiteSeguridadTipoPage({ params }) {
         {mostrarFormulario && (
           <form
             onSubmit={handleSubmit}
-            className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl p-5 mb-6 space-y-4 shadow-sm"
+            className="bg-panel border border-line rounded-2xl p-5 mb-6 space-y-4"
           >
-            <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">
+            <h3 className="title text-xl font-bold mb-2">
               {editandoId ? "Editar Registro" : "Nuevo Registro"}
             </h3>
 
@@ -296,7 +296,7 @@ export default function ComiteSeguridadTipoPage({ params }) {
                 required
                 value={formData.titulo}
                 onChange={(e) => setFormData({ ...formData, titulo: e.target.value })}
-                className="w-full p-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+                className="w-full p-3 bg-panel2 border border-line rounded-xl text-ink placeholder:text-mut outline-none focus:border-accent transition-colors"
               />
             )}
 
@@ -304,7 +304,7 @@ export default function ComiteSeguridadTipoPage({ params }) {
               <select
                 value={formData.tipo_incidencia}
                 onChange={(e) => setFormData({ ...formData, tipo_incidencia: e.target.value })}
-                className="w-full p-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+                className="w-full p-3 bg-panel2 border border-line rounded-xl text-ink outline-none focus:border-accent transition-colors"
               >
                 <option value="">Seleccionar Tipo de Incidencia</option>
                 <option value="Seguridad">Seguridad</option>
@@ -317,7 +317,7 @@ export default function ComiteSeguridadTipoPage({ params }) {
               value={formData.descripcion}
               onChange={(e) => setFormData({ ...formData, descripcion: e.target.value })}
               rows="3"
-              className="w-full p-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all resize-none"
+              className="w-full p-3 bg-panel2 border border-line rounded-xl text-ink placeholder:text-mut outline-none focus:border-accent transition-colors resize-none"
             />
 
             {tipo !== "incidencias" && (
@@ -326,7 +326,7 @@ export default function ComiteSeguridadTipoPage({ params }) {
                 required
                 value={formData.fecha}
                 onChange={(e) => setFormData({ ...formData, fecha: e.target.value })}
-                className="w-full p-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all" style={{ colorScheme: "light" }}
+                className="w-full p-3 bg-panel2 border border-line rounded-xl text-ink outline-none focus:border-accent transition-colors" style={{ colorScheme: "light" }}
               />
             )}
 
@@ -336,7 +336,7 @@ export default function ComiteSeguridadTipoPage({ params }) {
                 placeholder="Nombre del delegado"
                 value={formData.delegado_nombre}
                 onChange={(e) => setFormData({ ...formData, delegado_nombre: e.target.value })}
-                className="w-full p-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+                className="w-full p-3 bg-panel2 border border-line rounded-xl text-ink placeholder:text-mut outline-none focus:border-accent transition-colors"
               />
             )}
 
@@ -347,14 +347,14 @@ export default function ComiteSeguridadTipoPage({ params }) {
                   placeholder="Juzgado"
                   value={formData.juzgado}
                   onChange={(e) => setFormData({ ...formData, juzgado: e.target.value })}
-                  className="w-full p-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+                  className="w-full p-3 bg-panel2 border border-line rounded-xl text-ink placeholder:text-mut outline-none focus:border-accent transition-colors"
                 />
                 <input
                   type="text"
                   placeholder="Número de sentencia"
                   value={formData.numero_sentencia}
                   onChange={(e) => setFormData({ ...formData, numero_sentencia: e.target.value })}
-                  className="w-full p-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+                  className="w-full p-3 bg-panel2 border border-line rounded-xl text-ink placeholder:text-mut outline-none focus:border-accent transition-colors"
                 />
               </>
             )}
@@ -363,7 +363,7 @@ export default function ComiteSeguridadTipoPage({ params }) {
               <select
                 value={formData.area_id}
                 onChange={(e) => setFormData({ ...formData, area_id: e.target.value })}
-                className="w-full p-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+                className="w-full p-3 bg-panel2 border border-line rounded-xl text-ink outline-none focus:border-accent transition-colors"
               >
                 <option value="">Seleccionar Área</option>
                 {areas.map((area) => (
