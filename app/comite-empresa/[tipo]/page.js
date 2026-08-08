@@ -211,6 +211,7 @@ export default function ComiteEmpresaTipoPage({ params }) {
               value={formData.fecha}
               onChange={(e) => setFormData({ ...formData, fecha: e.target.value })}
               className="w-full p-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+              style={{ colorScheme: "light" }}
             />
 
             {tipo === "informes-delegados" && (
