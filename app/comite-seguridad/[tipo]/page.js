@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { Header } from "../../../components/ui";
 import VisorArchivo from "../../../components/VisorArchivo";
 import AdjuntosCSS from "../../../components/AdjuntosCSS";
+import AdjuntosInline from "../../../components/AdjuntosInline";
 import BotonTraspaso from "../../../components/BotonTraspaso";
 import {
   getDocumentosCSS,
@@ -423,14 +424,14 @@ export default function ComiteSeguridadTipoPage({ params }) {
                         {item.tipo}
                       </span>
                     )}
-                    {item.archivo_nombre && (
-                      <button
-                        type="button"
-                        onClick={() => setVisor({ url: item.archivo_url, nombre: item.archivo_nombre })}
-                        className="text-blue-600 text-sm hover:underline inline-block mt-2"
-                      >
-                        📎 {item.archivo_nombre}
-                      </button>
+                    {tipo !== "incidencias" && (
+                      <AdjuntosInline
+                        tabla={tablaActual}
+                        registroId={item.id}
+                        legado={item.archivo_nombre ? { url: item.archivo_url, nombre: item.archivo_nombre } : null}
+                        onAbrirVisor={setVisor}
+                        onLegadoBorrado={cargarDatos}
+                      />
                     )}
                   </div>
                   <div className="flex gap-1 ml-3 flex-col items-end">

@@ -161,10 +161,9 @@ export default function ExportarPage() {
         <div className="px-4 mt-5">
           <div className="informe-hoja bg-white text-neutral-900 rounded-xl border border-neutral-300 p-6 mx-auto" style={{ maxWidth: 800 }}>
             <div className="flex items-baseline justify-between border-b border-neutral-300 pb-3">
-              <h1 className="text-2xl font-extrabold tracking-tight">ESPARTANOS</h1>
+              <span className="text-xs text-neutral-500">{alcanceTexto}</span>
               <span className="text-xs text-neutral-500">{fecha}</span>
             </div>
-            <p className="text-sm text-neutral-500 mt-1">{alcanceTexto}</p>
 
             {secc.trab && (
               <TablaTrab items={trabajadores} baseMap={baseMap} mostrarArea={alcance !== "base"} />

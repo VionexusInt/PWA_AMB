@@ -95,12 +95,11 @@ export default function VisorArchivo({ url, nombre, tipo, onClose }) {
       {/* Contenido */}
       <div className="flex-1 min-h-0 overflow-auto" onClick={(e) => e.stopPropagation()}>
         {img && (
-          <div className="min-h-full flex items-center justify-center p-2">
+          <div className="min-h-full flex items-center justify-center p-3">
             <img
               src={url}
               alt={nombre || ""}
-              className="max-w-full max-h-full object-contain rounded"
-              style={{ maxHeight: "85vh" }}
+              style={{ maxWidth: "100%", maxHeight: "80vh", objectFit: "contain", borderRadius: 8 }}
             />
           </div>
         )}

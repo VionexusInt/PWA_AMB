@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { Header } from "../../../components/ui";
 import VisorArchivo from "../../../components/VisorArchivo";
 import AdjuntosCSS from "../../../components/AdjuntosCSS";
+import AdjuntosInline from "../../../components/AdjuntosInline";
 import BotonTraspaso from "../../../components/BotonTraspaso";
 import {
   getDocumentosEmpresa,
@@ -20,7 +21,11 @@ import {
   actualizarPropuesta,
   marcarPropuestaRealizada,
   borrarPropuesta,
+  getIncidenciasEmpresa,
+  crearIncidenciaEmpresa,
+  getCSSAdjuntosMulti,
 } from "../../../lib/data";
+import { supabase } from "../../../lib/supabase";
 
 export default function ComiteEmpresaTipoPage({ params }) {
   const tipo = params.tipo;
@@ -52,7 +57,18 @@ export default function ComiteEmpresaTipoPage({ params }) {
   async function cargarDatos() {
     setCargando(true);
     try {
-      const data = await getDocumentosEmpresa(tablaActual);
+      let data;
+      if (tipo === "protocolos") {
+        const { data: d } = await getProtocolos("protocolos_empresa");
+        data = d || [];
+      } else if (tipo === "propuestas") {
+        const { data: d } = await getPropuestas("propuestas_empresa");
+        data = d || [];
+      } else if (tipo === "incidencias") {
+        data = await getIncidenciasEmpresa();
+      } else {
+        data = await getDocumentosEmpresa(tablaActual);
+      }
       setDatos(data);
     } catch (error) {
       console.error("Error cargando datos:", error);
@@ -83,6 +99,9 @@ export default function ComiteEmpresaTipoPage({ params }) {
           const { data: c } = await crearPropuesta("propuestas_empresa", campos);
           idRegistro = c?.id;
         }
+      } else if (tipo === "incidencias") {
+        const creado = await crearIncidenciaEmpresa(formData);
+        idRegistro = creado?.[0]?.id;
       } else if (editandoId) {
         await actualizarDocumentoEmpresa(tablaActual, editandoId, formData, null);
       } else {
@@ -143,6 +162,8 @@ export default function ComiteEmpresaTipoPage({ params }) {
         await borrarProtocolo("protocolos_empresa", id);
       } else if (tipo === "propuestas") {
         await borrarPropuesta("propuestas_empresa", id);
+      } else if (tipo === "incidencias") {
+        await supabase.from("incidencias_empresa").delete().eq("id", id);
       } else {
         await borrarDocumentoEmpresa(tablaActual, id);
       }
@@ -285,14 +306,14 @@ export default function ComiteEmpresaTipoPage({ params }) {
                         {new Date(item.fecha).toLocaleDateString()}
                       </p>
                     )}
-                    {item.archivo_nombre && (
-                      <button
-                        type="button"
-                        onClick={() => setVisor({ url: item.archivo_url, nombre: item.archivo_nombre })}
-                        className="text-blue-600 text-sm hover:underline inline-block mt-2"
-                      >
-                        📎 {item.archivo_nombre}
-                      </button>
+                    {tipo !== "incidencias" && (
+                      <AdjuntosInline
+                        tabla={tablaActual}
+                        registroId={item.id}
+                        legado={item.archivo_nombre ? { url: item.archivo_url, nombre: item.archivo_nombre } : null}
+                        onAbrirVisor={setVisor}
+                        onLegadoBorrado={cargarDatos}
+                      />
                     )}
                   </div>
                   <div className="flex gap-2 ml-3 flex-col items-end">
