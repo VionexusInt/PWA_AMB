@@ -408,21 +408,32 @@ export default function ComiteSeguridadTipoPage({ params }) {
               >
                 <div className="flex justify-between items-start">
                   <div className="flex-1">
-                    <h3 className="font-bold text-lg">
-                      {item.titulo || item.descripcion || "Sin título"}
-                    </h3>
-                    {item.descripcion && (
-                      <p className="text-mut text-sm mt-1">{item.descripcion}</p>
+                    {tipo === "incidencias" ? (
+                      <>
+                        <span className="inline-block text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full mb-1">
+                          {item.tipo || "Incidencia"}
+                        </span>
+                        <p className="text-ink">{item.descripcion}</p>
+                      </>
+                    ) : (
+                      <>
+                        <h3 className="font-bold text-lg">
+                          {item.titulo || "Sin título"}
+                        </h3>
+                        {item.descripcion && (
+                          <p className="text-mut text-sm mt-1">{item.descripcion}</p>
+                        )}
+                        {item.tipo && (
+                          <span className="inline-block text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full mt-2">
+                            {item.tipo}
+                          </span>
+                        )}
+                      </>
                     )}
                     {item.fecha && (
                       <p className="text-mut text-xs mt-2">
                         {new Date(item.fecha).toLocaleDateString()}
                       </p>
-                    )}
-                    {item.tipo && (
-                      <span className="inline-block text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full mt-2">
-                        {item.tipo}
-                      </span>
                     )}
                     {tipo !== "incidencias" && (
                       <AdjuntosInline

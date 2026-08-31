@@ -35,7 +35,7 @@ const CONFIG = {
       { k: "id_personal", label: "ID personal" },
       { k: "titulo", label: "Título (TES, DUE…)" },
       { k: "puesto_trabajo", label: "Puesto de trabajo" },
-      { k: "tipo_contrato", label: "Contrato", tipo: "opciones", opciones: ["Fijo", "Eventual"] },
+      { k: "tipo_contrato", label: "Contrato", tipo: "opciones", opciones: ["Fijo", "Eventual", "Prácticas"] },
       { k: "de_baja", label: "¿Está de baja?", tipo: "bool" },
     ],
     avisoBorrar: "Se eliminará el trabajador y sus incidencias.",

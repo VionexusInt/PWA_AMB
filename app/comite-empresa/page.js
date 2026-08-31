@@ -14,6 +14,7 @@ const secciones = [
   { id: "protocolos", nombre: "Protocolos y Procedimientos", icono: "📁" },
   { id: "propuestas", nombre: "Propuestas", icono: "💡" },
   { id: "calendarios", nombre: "Calendarios Laborales", icono: "📅" },
+  { id: "licitacion", nombre: "Licitación", icono: "🏗️" },
 ];
 
 export default function ComiteEmpresaPage() {

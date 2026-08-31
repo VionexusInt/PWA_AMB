@@ -6,6 +6,7 @@ import { useRealtime } from "../../../lib/useRealtime";
 import { Header, Badge, Spinner } from "../../../components/ui";
 import FormEntidad from "../../../components/FormEntidad";
 import BotonPDFIncidencia from "../../../components/BotonPDFIncidencia";
+import AdjuntosVerIncidencia from "../../../components/AdjuntosVerIncidencia";
 
 const TABS = [
   { key: "trab", label: "Trabajadores" },
@@ -193,10 +194,10 @@ function ListaIncidencias({ items, onEdit, onToggle }) {
           </div>
           <p className="text-mut text-xs mt-2">
             {new Date(i.fecha).toLocaleString("es-ES")}
-            {i.adjuntos?.length > 0 && ` · 📎 ${i.adjuntos.length}`}
             {i.resuelta && i.fecha_resolucion &&
               ` · resuelta ${new Date(i.fecha_resolucion).toLocaleDateString("es-ES")}`}
           </p>
+          <AdjuntosVerIncidencia incidenciaId={i.id} n={i.adjuntos?.length || 0} />
         </div>
       ))}
     </div>

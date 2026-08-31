@@ -4,6 +4,7 @@ import { resolverIncidencia } from "../lib/data";
 import { Badge } from "./ui";
 import FormEntidad from "./FormEntidad";
 import BotonPDFIncidencia from "./BotonPDFIncidencia";
+import AdjuntosVerIncidencia from "./AdjuntosVerIncidencia";
 
 /**
  * Sección de incidencias reutilizable.
@@ -67,10 +68,10 @@ export default function Incidencias({ items, incField, parentId, onChange }) {
               </div>
               <p className="text-mut text-xs mt-2">
                 {new Date(i.fecha).toLocaleString("es-ES")}
-                  {i.adjuntos?.length > 0 && ` · 📎 ${i.adjuntos.length}`}
                 {i.resuelta && i.fecha_resolucion &&
                   ` · resuelta ${new Date(i.fecha_resolucion).toLocaleDateString("es-ES")}`}
               </p>
+              <AdjuntosVerIncidencia incidenciaId={i.id} n={i.adjuntos?.length || 0} />
             </div>
           ))}
         </div>
