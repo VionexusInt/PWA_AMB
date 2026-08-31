@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { getCSSAdjuntosMulti, subirCSSAdjuntoMulti, borrarCSSAdjuntoMulti } from "../lib/data";
 
 function esImagen(tipo, nombre = "") {
@@ -13,6 +13,7 @@ function esImagen(tipo, nombre = "") {
 export default function AdjuntosInline({ tabla, registroId, legado, onAbrirVisor, onLegadoBorrado }) {
   const [adjuntos, setAdjuntos] = useState([]);
   const [subiendo, setSubiendo] = useState(false);
+  const inputRef = useRef(null);
 
   useEffect(() => {
     if (registroId) {
@@ -70,12 +71,21 @@ export default function AdjuntosInline({ tabla, registroId, legado, onAbrirVisor
         </div>
       )}
 
-      <label className="inline-flex items-center gap-1.5 text-xs font-semibold text-mut cursor-pointer active:scale-95">
+      <button
+        type="button"
+        onClick={() => inputRef.current?.click()}
+        disabled={subiendo}
+        className="inline-flex items-center gap-1.5 text-xs font-semibold text-mut active:scale-95 disabled:opacity-50"
+      >
         {subiendo ? "Subiendo…" : "+ Añadir archivo"}
-        {!subiendo && (
-          <input type="file" multiple onChange={elegir} className="hidden" />
-        )}
-      </label>
+      </button>
+      <input
+        ref={inputRef}
+        type="file"
+        multiple
+        onChange={elegir}
+        style={{ position: "absolute", width: 1, height: 1, padding: 0, margin: -1, overflow: "hidden", clip: "rect(0,0,0,0)", border: 0 }}
+      />
     </div>
   );
 }

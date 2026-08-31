@@ -48,7 +48,7 @@ export default function ComiteEmpresaTipoPage({ params }) {
   const [legadoActual, setLegadoActual] = useState(null); // { url, nombre }
   const [pendientes, setPendientes] = useState([]); // File[]
 
-  const tablaActual = tipo === "protocolos" ? "protocolos_empresa" : tipo === "propuestas" ? "propuestas_empresa" : tipo === "convenio" ? "convenio_empresa" : tipo.replace("-", "_") + "_empresa";
+  const tablaActual = tipo === "protocolos" ? "protocolos_empresa" : tipo === "propuestas" ? "propuestas_empresa" : tipo === "calendarios" ? "calendarios_laborales" : tipo === "convenio" ? "convenio_empresa" : tipo.replace("-", "_") + "_empresa";
 
   useEffect(() => {
     cargarDatos();
@@ -66,6 +66,9 @@ export default function ComiteEmpresaTipoPage({ params }) {
         data = d || [];
       } else if (tipo === "incidencias") {
         data = await getIncidenciasEmpresa();
+      } else if (tipo === "calendarios") {
+        const { data: d } = await getProtocolos("calendarios_laborales");
+        data = d || [];
       } else {
         data = await getDocumentosEmpresa(tablaActual);
       }
@@ -102,6 +105,14 @@ export default function ComiteEmpresaTipoPage({ params }) {
       } else if (tipo === "incidencias") {
         const creado = await crearIncidenciaEmpresa(formData);
         idRegistro = creado?.[0]?.id;
+      } else if (tipo === "calendarios") {
+        const campos = { titulo: formData.titulo, descripcion: formData.descripcion, fecha: formData.fecha || null };
+        if (editandoId) {
+          await actualizarProtocolo("calendarios_laborales", editandoId, campos);
+        } else {
+          const { data: c } = await crearProtocolo("calendarios_laborales", campos);
+          idRegistro = c?.id;
+        }
       } else if (editandoId) {
         await actualizarDocumentoEmpresa(tablaActual, editandoId, formData, null);
       } else {
@@ -164,6 +175,8 @@ export default function ComiteEmpresaTipoPage({ params }) {
         await borrarPropuesta("propuestas_empresa", id);
       } else if (tipo === "incidencias") {
         await supabase.from("incidencias_empresa").delete().eq("id", id);
+      } else if (tipo === "calendarios") {
+        await borrarProtocolo("calendarios_laborales", id);
       } else {
         await borrarDocumentoEmpresa(tablaActual, id);
       }
@@ -181,6 +194,9 @@ export default function ComiteEmpresaTipoPage({ params }) {
 
   if (tipo === "informes-delegados") {
     tituloPagina = "Informes Delegados";
+  }
+  if (tipo === "calendarios") {
+    tituloPagina = "Calendarios Laborales";
   }
 
   return (

@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   addArea, updateArea, deleteArea,
   addBase, updateBase, deleteBase,
@@ -7,7 +7,7 @@ import {
   addVehiculo, updateVehiculo, deleteVehiculo,
   addIncidencia, updateIncidencia, deleteIncidencia,
   getAdjuntos, subirAdjunto, borrarAdjunto, urlAdjunto,
-  getTiposIncidencia, resolverTipoIncidencia,
+  getTiposIncidencia, resolverTipoIncidencia, borrarTipoIncidencia,
 } from "../lib/data";
 
 // Tipos fijos de incidencia (siempre disponibles)
@@ -163,44 +163,94 @@ function CampoOpciones({ label, opciones, value, onChange }) {
 }
 
 // Tipo de incidencia: tipos fijos + personalizados + "Otro" (escribir uno nuevo)
-function CampoTipoIncidencia({ label, value, onChange, tiposCustom }) {
+function CampoTipoIncidencia({ label, value, onChange, tiposCustom, onTipoBorrado }) {
   const conocidos = [...TIPOS_FIJOS, ...tiposCustom.filter((t) => !TIPOS_FIJOS.includes(t))];
-  const [otro, setOtro] = useState(() => !!value && !conocidos.includes(value));
+  const [abierto, setAbierto] = useState(false);
+  const [otro, setOtro] = useState(false);
+  const [texto, setTexto] = useState("");
+  const esFijo = (t) => TIPOS_FIJOS.includes(t);
+
+  function elegir(op) {
+    setOtro(false);
+    onChange(op);
+    setAbierto(false);
+  }
+
+  function confirmarOtro() {
+    if (texto.trim()) { onChange(texto.trim()); setAbierto(false); }
+  }
+
+  async function borrar(t, e) {
+    e.stopPropagation();
+    if (!confirm(`¿Borrar el tipo "${t}" de la lista? Las incidencias que ya lo usan no se verán afectadas.`)) return;
+    await borrarTipoIncidencia(t);
+    onTipoBorrado?.(t);
+    if (value === t) onChange("");
+  }
 
   return (
     <div>
       <span className="text-mut text-sm">{label}</span>
-      <div className="mt-1 flex gap-2 flex-wrap">
-        {conocidos.map((op) => (
-          <button
-            key={op}
-            type="button"
-            onClick={() => { setOtro(false); onChange(value === op ? "" : op); }}
-            className={`tap px-4 py-3 rounded-xl border font-semibold ${
-              !otro && value === op ? "bg-accent text-white border-accent" : "bg-panel2 text-mut border-line"
-            }`}
-          >
-            {op}
-          </button>
-        ))}
-        <button
-          type="button"
-          onClick={() => { setOtro(true); if (conocidos.includes(value)) onChange(""); }}
-          className={`tap px-4 py-3 rounded-xl border font-semibold ${
-            otro ? "bg-accent text-white border-accent" : "bg-panel2 text-mut border-line"
-          }`}
-        >
-          Otro
-        </button>
-      </div>
-      {otro && (
-        <input
-          value={value || ""}
-          onChange={(e) => onChange(e.target.value)}
-          placeholder="Escribe el tipo (ej: Robo, Vandalismo…)"
-          autoFocus
-          className="mt-2 w-full bg-panel2 border border-line rounded-xl px-3 py-3 text-ink outline-none focus:border-accent"
-        />
+      <button
+        type="button"
+        onClick={() => { setAbierto((v) => !v); setOtro(false); }}
+        className="tap mt-1 w-full flex items-center justify-between px-4 py-3 rounded-xl bg-panel2 border border-line text-left"
+      >
+        <span className={value ? "text-ink" : "text-mut"}>{value || "Elegir tipo…"}</span>
+        <span className="text-mut">{abierto ? "▲" : "▼"}</span>
+      </button>
+
+      {abierto && (
+        <div className="mt-2 border border-line rounded-xl overflow-hidden bg-panel2">
+          <div className="max-h-56 overflow-y-auto">
+            {conocidos.map((op) => (
+              <div
+                key={op}
+                onClick={() => elegir(op)}
+                className={`flex items-center justify-between px-4 py-3 cursor-pointer border-b border-line last:border-b-0 ${
+                  value === op ? "bg-accent/15 text-accent font-semibold" : "text-ink active:bg-panel"
+                }`}
+              >
+                <span>{op}</span>
+                {!esFijo(op) && (
+                  <button
+                    type="button"
+                    onClick={(e) => borrar(op, e)}
+                    className="text-mut hover:text-accent text-sm px-2"
+                    aria-label={`Borrar tipo ${op}`}
+                  >
+                    🗑️
+                  </button>
+                )}
+              </div>
+            ))}
+            <div
+              onClick={() => setOtro(true)}
+              className={`px-4 py-3 cursor-pointer ${otro ? "bg-accent/15 text-accent font-semibold" : "text-ink active:bg-panel"}`}
+            >
+              + Otro (escribir uno nuevo)
+            </div>
+          </div>
+
+          {otro && (
+            <div className="p-3 border-t border-line flex gap-2">
+              <input
+                value={texto}
+                onChange={(e) => setTexto(e.target.value)}
+                placeholder="Ej: Robo, Vandalismo…"
+                autoFocus
+                className="flex-1 bg-panel border border-line rounded-lg px-3 py-2 text-ink outline-none focus:border-accent"
+              />
+              <button
+                type="button"
+                onClick={confirmarOtro}
+                className="tap px-4 rounded-lg bg-accent text-white text-sm font-semibold"
+              >
+                Usar
+              </button>
+            </div>
+          )}
+        </div>
       )}
     </div>
   );
@@ -354,6 +404,7 @@ export default function FormEntidad({ tipo, modo, parentId, registro, onClose, o
                   value={v[c.k] || ""}
                   onChange={(nv) => setVal(c.k, nv)}
                   tiposCustom={tiposCustom}
+                  onTipoBorrado={(t) => setTiposCustom((list) => list.filter((x) => x !== t))}
                 />
               );
             if (c.tipo === "fecha")
@@ -441,6 +492,7 @@ function esImagen(tipo, nombre = "") {
 
 function AdjuntosBloque({ existentes, setExistentes, pendientes, setPendientes }) {
   const [borrando, setBorrando] = useState(null);
+  const inputRef = useRef(null);
 
   function elegir(e) {
     const files = Array.from(e.target.files || []);
@@ -506,10 +558,21 @@ function AdjuntosBloque({ existentes, setExistentes, pendientes, setPendientes }
       )}
 
       {/* Botón elegir */}
-      <label className="tap mt-2 inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-panel2 border border-line text-sm font-semibold cursor-pointer">
+      <button
+        type="button"
+        onClick={() => inputRef.current?.click()}
+        className="tap mt-2 inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-panel2 border border-line text-sm font-semibold"
+      >
         + Añadir archivo
-        <input type="file" accept="image/*,application/pdf" multiple onChange={elegir} className="hidden" />
-      </label>
+      </button>
+      <input
+        ref={inputRef}
+        type="file"
+        accept="image/*,application/pdf"
+        multiple
+        onChange={elegir}
+        style={{ position: "absolute", width: 1, height: 1, padding: 0, margin: -1, overflow: "hidden", clip: "rect(0,0,0,0)", border: 0 }}
+      />
     </div>
   );
 }

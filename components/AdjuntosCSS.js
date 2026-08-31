@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { getCSSAdjuntosMulti, borrarCSSAdjuntoMulti, borrarArchivoLegadoCSS } from "../lib/data";
 
 function esImagen(tipo, nombre = "") {
@@ -18,6 +18,7 @@ function esImagen(tipo, nombre = "") {
 export default function AdjuntosCSS({ tabla, registroId, legado, pendientes, setPendientes, onLegadoBorrado, onAbrir }) {
   const [existentes, setExistentes] = useState([]);
   const [cargando, setCargando] = useState(false);
+  const inputRef = useRef(null);
 
   useEffect(() => {
     if (registroId) {
@@ -87,10 +88,20 @@ export default function AdjuntosCSS({ tabla, registroId, legado, pendientes, set
       ))}
       {pendientes.length > 0 && <p className="text-xs text-mut mb-2">Se subirán al guardar.</p>}
 
-      <label className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-50 dark:bg-blue-900 text-blue-700 dark:text-blue-200 text-sm font-semibold cursor-pointer">
+      <button
+        type="button"
+        onClick={() => inputRef.current?.click()}
+        className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-50 dark:bg-blue-900 text-blue-700 dark:text-blue-200 text-sm font-semibold active:scale-95"
+      >
         + Añadir archivo
-        <input type="file" multiple onChange={elegir} className="hidden" />
-      </label>
+      </button>
+      <input
+        ref={inputRef}
+        type="file"
+        multiple
+        onChange={elegir}
+        style={{ position: "absolute", width: 1, height: 1, padding: 0, margin: -1, overflow: "hidden", clip: "rect(0,0,0,0)", border: 0 }}
+      />
     </div>
   );
 }

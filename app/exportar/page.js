@@ -4,6 +4,7 @@ import { getDatosInforme } from "../../lib/data";
 import { useRealtime } from "../../lib/useRealtime";
 import { esDispositivoAdmin } from "../../lib/acceso";
 import { Header, Spinner } from "../../components/ui";
+import { exportarInformePDF } from "../../lib/pdfInforme";
 
 export default function ExportarPage() {
   const [admin, setAdmin] = useState(null);
@@ -19,6 +20,8 @@ export default function ExportarPage() {
   const [alcance, setAlcance] = useState("general"); // general | area | base
   const [areaId, setAreaId] = useState("");
   const [baseId, setBaseId] = useState("");
+  const [tipoIncF, setTipoIncF] = useState("Todos"); // filtro de tipo para incidencias
+  const [generando, setGenerando] = useState(false);
 
   if (admin === null) {
     return (<main><Header titulo="Informes" back /><Spinner /></main>);
@@ -54,10 +57,12 @@ export default function ExportarPage() {
 
   const trabajadores = (data?.trabajadores || []).filter((t) => enAlcance(t.base?.id || t.base_id));
   const vehiculos = (data?.vehiculos || []).filter((v) => enAlcance(v.base?.id || v.base_id));
-  const incidencias = (data?.incidencias || []).filter((i) => {
+  let incidencias = (data?.incidencias || []).filter((i) => {
     const b = i.base?.id || i.trabajador?.base_id || i.vehiculo?.base_id;
     return enAlcance(b);
   });
+  const tiposIncDisponibles = ["Todos", ...Array.from(new Set(incidencias.map((i) => i.tipo).filter(Boolean))).sort()];
+  if (tipoIncF !== "Todos") incidencias = incidencias.filter((i) => i.tipo === tipoIncF);
 
   const alcanceTexto =
     alcance === "general" ? "General (todas las áreas)"
@@ -116,6 +121,25 @@ export default function ExportarPage() {
           </div>
         </div>
 
+        {secc.inc && tiposIncDisponibles.length > 1 && (
+          <div>
+            <span className="text-mut text-sm">Tipo de incidencia</span>
+            <div className="mt-1 flex gap-2 flex-wrap overflow-x-auto noscroll">
+              {tiposIncDisponibles.map((t) => (
+                <button
+                  key={t}
+                  onClick={() => setTipoIncF(t)}
+                  className={`tap px-3.5 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap border ${
+                    tipoIncF === t ? "bg-ink text-base border-ink" : "bg-panel text-mut border-line"
+                  }`}
+                >
+                  {t}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
         {alcance === "area" && (
           <select
             value={areaId}
@@ -143,14 +167,22 @@ export default function ExportarPage() {
         )}
 
         <button
-          onClick={() => window.print()}
-          disabled={!listo}
+          onClick={async () => {
+            setGenerando(true);
+            try {
+              await exportarInformePDF({ secciones: secc, alcanceTexto, trabajadores, vehiculos, incidencias, baseMap });
+            } catch (e) {
+              alert("No se pudo generar el PDF.");
+            }
+            setGenerando(false);
+          }}
+          disabled={!listo || generando}
           className="tap w-full py-3 rounded-xl bg-accent text-white font-semibold disabled:opacity-50"
         >
-          Imprimir o guardar PDF
+          {generando ? "Generando PDF…" : "Generar y descargar PDF"}
         </button>
         <p className="text-mut text-xs -mt-1">
-          Se abrirá la ventana de impresión. Elige “Guardar como PDF” como destino.
+          Se descargará un archivo PDF listo para compartir o imprimir.
         </p>
       </div>
 

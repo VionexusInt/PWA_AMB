@@ -13,6 +13,7 @@ const secciones = [
   { id: "incidencias", nombre: "Incidencias", icono: "🚨" },
   { id: "protocolos", nombre: "Protocolos y Procedimientos", icono: "📁" },
   { id: "propuestas", nombre: "Propuestas", icono: "💡" },
+  { id: "calendarios", nombre: "Calendarios Laborales", icono: "📅" },
 ];
 
 export default function ComiteEmpresaPage() {
