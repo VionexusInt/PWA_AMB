@@ -200,7 +200,7 @@ export default function Inicio() {
               </div>
             </Link>
           )}
-          {tienePermiso("admin") && (
+          {tienePermiso("informes") && (
             <Link
               href="/exportar"
               className="tap flex items-center gap-3 mt-3 bg-panel border border-line rounded-2xl p-4 active:scale-[.98] transition-transform"

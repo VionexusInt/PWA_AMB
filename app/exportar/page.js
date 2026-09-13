@@ -2,13 +2,19 @@
 import { useState, useEffect } from "react";
 import { getDatosInforme } from "../../lib/data";
 import { useRealtime } from "../../lib/useRealtime";
-import { esDispositivoAdmin } from "../../lib/acceso";
+import { esDispositivoAdmin, getPermisosDispositivo } from "../../lib/acceso";
 import { Header, Spinner } from "../../components/ui";
 import { exportarInformePDF } from "../../lib/pdfInforme";
 
 export default function ExportarPage() {
-  const [admin, setAdmin] = useState(null);
-  useEffect(() => setAdmin(esDispositivoAdmin()), []);
+  const [acceso, setAcceso] = useState(null);
+  useEffect(() => {
+    (async () => {
+      const esAdmin = esDispositivoAdmin();
+      const permisos = await getPermisosDispositivo();
+      setAcceso(esAdmin || permisos.includes("informes"));
+    })();
+  }, []);
 
   const { data, loading } = useRealtime(
     () => getDatosInforme(),
@@ -23,14 +29,14 @@ export default function ExportarPage() {
   const [tipoIncF, setTipoIncF] = useState("Todos"); // filtro de tipo para incidencias
   const [generando, setGenerando] = useState(false);
 
-  if (admin === null) {
+  if (acceso === null) {
     return (<main><Header titulo="Informes" back /><Spinner /></main>);
   }
-  if (!admin) {
+  if (!acceso) {
     return (
       <main>
         <Header titulo="Informes" back />
-        <p className="px-4 mt-6 text-mut">Esta sección es solo para administradores.</p>
+        <p className="px-4 mt-6 text-mut">No tienes permiso para ver esta sección.</p>
       </main>
     );
   }
@@ -237,6 +243,7 @@ function TablaTrab({ items, baseMap, mostrarArea }) {
         <thead>
           <tr>
             <th className={th}>Nombre</th>
+            <th className={th}>DNI</th>
             <th className={th}>ID</th>
             <th className={th}>Puesto</th>
             <th className={th}>Contrato</th>
@@ -251,6 +258,7 @@ function TablaTrab({ items, baseMap, mostrarArea }) {
             return (
               <tr key={t.id}>
                 <td className={td}>{t.nombre}</td>
+                <td className={td}>{t.dni || "—"}</td>
                 <td className={td}>{t.id_personal || "—"}</td>
                 <td className={td}>{[t.titulo, t.puesto_trabajo].filter(Boolean).join(" · ") || "—"}</td>
                 <td className={td}>{t.tipo_contrato || "—"}</td>

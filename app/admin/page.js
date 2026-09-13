@@ -20,6 +20,7 @@ const PERMISOS_DISPONIBLES = [
   { id: "comite_seguridad", nombre: "Comité de Seguridad" },
   { id: "comite_empresa", nombre: "Comité de Empresa" },
   { id: "sugerencias", nombre: "Sugerencias" },
+  { id: "informes", nombre: "Informes" },
   { id: "admin", nombre: "Gestión de roles y códigos" },
 ];
 

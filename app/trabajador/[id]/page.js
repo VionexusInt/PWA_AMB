@@ -39,6 +39,7 @@ export default function TrabajadorPage({ params }) {
           <div className="bg-panel border border-line rounded-2xl p-4">
             <div className="flex items-center gap-2 flex-wrap mb-2">
               {t.id_personal && <Badge>ID {t.id_personal}</Badge>}
+              {t.dni && <Badge>DNI {t.dni}</Badge>}
               {t.de_baja && <Badge tone="accent">De baja</Badge>}
               {t.en_bolsa && <Badge tone="accent">En bolsa</Badge>}
               {t.tipo_contrato && <Badge>{t.tipo_contrato}</Badge>}

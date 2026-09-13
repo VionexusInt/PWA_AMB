@@ -1,11 +1,13 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Header } from "../../../components/ui";
 import VisorArchivo from "../../../components/VisorArchivo";
 import AdjuntosCSS from "../../../components/AdjuntosCSS";
 import AdjuntosInline from "../../../components/AdjuntosInline";
+import AdjuntosVerIncidencia from "../../../components/AdjuntosVerIncidencia";
 import BotonTraspaso from "../../../components/BotonTraspaso";
+import { useRealtime } from "../../../lib/useRealtime";
 import {
   getDocumentosEmpresa,
   crearDocumentoEmpresa,
@@ -29,8 +31,6 @@ import { supabase } from "../../../lib/supabase";
 
 export default function ComiteEmpresaTipoPage({ params }) {
   const tipo = params.tipo;
-  const [datos, setDatos] = useState([]);
-  const [cargando, setCargando] = useState(true);
   const [mostrarFormulario, setMostrarFormulario] = useState(false);
   const [editandoId, setEditandoId] = useState(null);
   const [visor, setVisor] = useState(null);
@@ -50,38 +50,43 @@ export default function ComiteEmpresaTipoPage({ params }) {
 
   const tablaActual = tipo === "protocolos" ? "protocolos_empresa" : tipo === "propuestas" ? "propuestas_empresa" : tipo === "calendarios" ? "calendarios_laborales" : tipo === "licitacion" ? "licitacion_empresa" : tipo === "convenio" ? "convenio_empresa" : tipo.replace("-", "_") + "_empresa";
 
-  useEffect(() => {
-    cargarDatos();
-  }, [tipo]);
-
   async function cargarDatos() {
-    setCargando(true);
     try {
       let data;
       if (tipo === "protocolos") {
-        const { data: d } = await getProtocolos("protocolos_empresa");
+        const { data: d, error } = await getProtocolos("protocolos_empresa");
+        if (error) throw error;
         data = d || [];
       } else if (tipo === "propuestas") {
-        const { data: d } = await getPropuestas("propuestas_empresa");
+        const { data: d, error } = await getPropuestas("propuestas_empresa");
+        if (error) throw error;
         data = d || [];
       } else if (tipo === "incidencias") {
         data = await getIncidenciasEmpresa();
       } else if (tipo === "calendarios") {
-        const { data: d } = await getProtocolos("calendarios_laborales");
+        const { data: d, error } = await getProtocolos("calendarios_laborales");
+        if (error) throw error;
         data = d || [];
       } else if (tipo === "licitacion") {
-        const { data: d } = await getProtocolos("licitacion_empresa");
+        const { data: d, error } = await getProtocolos("licitacion_empresa");
+        if (error) throw error;
         data = d || [];
       } else {
         data = await getDocumentosEmpresa(tablaActual);
       }
-      setDatos(data);
+      return { data, error: null };
     } catch (error) {
       console.error("Error cargando datos:", error);
-    } finally {
-      setCargando(false);
+      return { data: null, error };
     }
   }
+
+  const { data: datosRT, loading: cargando, reload: recargar } = useRealtime(
+    cargarDatos,
+    [tablaActual, "css_adjuntos"],
+    [tipo]
+  );
+  const datos = datosRT || [];
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -138,7 +143,7 @@ export default function ComiteEmpresaTipoPage({ params }) {
       }
 
       resetFormulario();
-      cargarDatos();
+      recargar();
     } catch (error) {
       console.error("Error al guardar:", error);
       alert("Hubo un error al guardar.");
@@ -193,7 +198,7 @@ export default function ComiteEmpresaTipoPage({ params }) {
       } else {
         await borrarDocumentoEmpresa(tablaActual, id);
       }
-      cargarDatos();
+      recargar();
     } catch (error) {
       console.error("Error al borrar:", error);
       alert("Hubo un error al borrar.");
@@ -302,7 +307,7 @@ export default function ComiteEmpresaTipoPage({ params }) {
               legado={legadoActual}
               pendientes={pendientes}
               setPendientes={setPendientes}
-              onLegadoBorrado={() => { setLegadoActual(null); cargarDatos(); }}
+              onLegadoBorrado={() => { setLegadoActual(null); recargar(); }}
               onAbrir={setVisor}
             />
 
@@ -335,6 +340,7 @@ export default function ComiteEmpresaTipoPage({ params }) {
                           </span>
                         )}
                         <p className="text-ink">{item.descripcion}</p>
+                        <AdjuntosVerIncidencia incidenciaId={item.id} n={item.adjuntos?.length || 0} origenEmpresa />
                       </>
                     ) : (
                       <>
@@ -357,21 +363,21 @@ export default function ComiteEmpresaTipoPage({ params }) {
                         registroId={item.id}
                         legado={item.archivo_nombre ? { url: item.archivo_url, nombre: item.archivo_nombre } : null}
                         onAbrirVisor={setVisor}
-                        onLegadoBorrado={cargarDatos}
+                        onLegadoBorrado={recargar}
                       />
                     )}
                   </div>
                   <div className="flex gap-2 ml-3 flex-col items-end">
                     {tipo === "propuestas" && (
                       <button
-                        onClick={async () => { await marcarPropuestaRealizada("propuestas_empresa", item.id, !item.realizada); cargarDatos(); }}
+                        onClick={async () => { await marcarPropuestaRealizada("propuestas_empresa", item.id, !item.realizada); recargar(); }}
                         className={`text-xs font-bold px-2 py-1 rounded-full border ${item.realizada ? "bg-panel2 text-mut border-line" : "bg-green-50 text-green-700 border-green-300"}`}
                       >
                         {item.realizada ? "↩ Pendiente" : "✓ Realizada"}
                       </button>
                     )}
                     <div className="flex gap-1">
-                      <BotonTraspaso tabla={tablaActual} registroId={item.id} onTraspasado={cargarDatos} />
+                      <BotonTraspaso tabla={tablaActual} registroId={item.id} onTraspasado={recargar} />
                       <button onClick={() => handleEditar(item)} className="text-yellow-600 hover:text-yellow-700 p-2" title="Editar">✏️</button>
                       <button onClick={() => handleBorrar(item.id)} className="text-red-600 hover:text-red-700 p-2" title="Borrar">🗑️</button>
                     </div>
