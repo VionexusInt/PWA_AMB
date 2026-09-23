@@ -48,6 +48,7 @@ export default function AreaPage({ params }) {
                     <p className="text-mut text-sm">{b.tipo}</p>
                   </div>
                   {b.pendientes > 0 && <Badge tone="accent">{b.pendientes}</Badge>}
+                  {b.resueltas > 0 && <Badge tone="ok">{b.resueltas}</Badge>}
                 </div>
                 <div className="flex gap-2 mt-3">
                   <Badge>👤 {b.n_trab}</Badge>

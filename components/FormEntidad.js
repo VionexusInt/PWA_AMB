@@ -37,6 +37,7 @@ const CONFIG = {
       { k: "titulo", label: "Título (TES, DUE…)" },
       { k: "puesto_trabajo", label: "Puesto de trabajo" },
       { k: "tipo_contrato", label: "Contrato", tipo: "opciones", opciones: ["Fijo", "Eventual", "Prácticas"] },
+      { k: "fecha_antiguedad", label: "Antigüedad (fecha de alta)", tipo: "fecha_antig" },
       { k: "de_baja", label: "¿Está de baja?", tipo: "bool" },
     ],
     avisoBorrar: "Se eliminará el trabajador y sus incidencias.",
@@ -106,6 +107,22 @@ function CampoFecha({ label, value, onChange }) {
         value={aInputFecha(value)}
         onChange={(e) => onChange(e.target.value)}
         className="mt-1 w-full bg-panel2 border border-line rounded-xl px-3 py-3 text-ink outline-none focus:border-accent"
+      />
+    </label>
+  );
+}
+
+// Campo de fecha simple (solo día, sin hora) — p.ej. antigüedad
+function CampoFechaSimple({ label, value, onChange }) {
+  return (
+    <label className="block">
+      <span className="text-mut text-sm">{label}</span>
+      <input
+        type="date"
+        value={value ? String(value).slice(0, 10) : ""}
+        onChange={(e) => onChange(e.target.value)}
+        className="mt-1 w-full bg-panel2 border border-line rounded-xl px-3 py-3 text-ink outline-none focus:border-accent"
+        style={{ colorScheme: "dark" }}
       />
     </label>
   );
@@ -411,6 +428,10 @@ export default function FormEntidad({ tipo, modo, parentId, registro, onClose, o
             if (c.tipo === "fecha")
               return (
                 <CampoFecha key={c.k} label={c.label} value={v[c.k]} onChange={(nv) => setVal(c.k, nv)} />
+              );
+            if (c.tipo === "fecha_antig")
+              return (
+                <CampoFechaSimple key={c.k} label={c.label} value={v[c.k]} onChange={(nv) => setVal(c.k, nv)} />
               );
             return (
               <Campo

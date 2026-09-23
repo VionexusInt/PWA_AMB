@@ -247,6 +247,7 @@ function TablaTrab({ items, baseMap, mostrarArea }) {
             <th className={th}>ID</th>
             <th className={th}>Puesto</th>
             <th className={th}>Contrato</th>
+            <th className={th}>Antigüedad</th>
             <th className={th}>Baja</th>
             <th className={th}>Base</th>
             {mostrarArea && <th className={th}>Área</th>}
@@ -262,6 +263,7 @@ function TablaTrab({ items, baseMap, mostrarArea }) {
                 <td className={td}>{t.id_personal || "—"}</td>
                 <td className={td}>{[t.titulo, t.puesto_trabajo].filter(Boolean).join(" · ") || "—"}</td>
                 <td className={td}>{t.tipo_contrato || "—"}</td>
+                <td className={td}>{t.fecha_antiguedad ? new Date(t.fecha_antiguedad).toLocaleDateString("es-ES") : "—"}</td>
                 <td className={td}>{t.de_baja ? "Sí" : "No"}</td>
                 <td className={td}>{t.base?.nombre || info.nombre || "—"}</td>
                 {mostrarArea && <td className={td}>{info.areaNombre || "—"}</td>}

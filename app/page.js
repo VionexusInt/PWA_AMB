@@ -46,7 +46,7 @@ export default function Inicio() {
     const [b, t, v, inc] = await Promise.all([
       supabase.from("bases").select("id, nombre, tipo").ilike("nombre", like).limit(8),
       supabase.from("trabajadores").select("id, nombre, base_id, id_personal")
-        .or(`nombre.ilike.${like},id_personal.ilike.${like}`).limit(8),
+        .or(`nombre.ilike.${like},id_personal::text.ilike.${like}`).limit(8),
       supabase.from("vehiculos").select("id, matricula, base_id").ilike("matricula", like).limit(8),
       supabase
         .from("incidencias")

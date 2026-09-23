@@ -47,6 +47,11 @@ export default function TrabajadorPage({ params }) {
             <p className="text-mut text-sm">
               {[t.titulo, t.puesto_trabajo].filter(Boolean).join(" · ") || "Sin datos adicionales"}
             </p>
+            {t.fecha_antiguedad && (
+              <p className="text-mut text-xs mt-1">
+                Antigüedad: {new Date(t.fecha_antiguedad).toLocaleDateString("es-ES")}
+              </p>
+            )}
             <div className="flex gap-2 mt-3 flex-wrap">
               <button
                 onClick={() => setEditar(true)}
