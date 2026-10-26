@@ -12,10 +12,10 @@ export default function TrabajadoresPage() {
     []
   );
   const [q, setQ] = useState("");
-  const s = q.trim().toLowerCase();
-  const items = (data || []).filter(
-    (t) => (t.nombre || "").toLowerCase().includes(s) || (t.id_personal || "").toLowerCase().includes(s)
-  );
+  // Comparación sin tildes ni mayúsculas ("tomas guillen" encuentra "Tomás Guillén")
+  const norm = (x) => String(x || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+  const s = norm(q.trim());
+  const items = (data || []).filter((t) => norm(t.nombre).includes(s) || norm(t.id_personal).includes(s));
 
   return (
     <main className="pb-10">

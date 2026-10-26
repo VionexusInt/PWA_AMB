@@ -23,6 +23,7 @@ export default function ExportarPage() {
   );
 
   const [secc, setSecc] = useState({ trab: true, veh: true, inc: true });
+  const [colsTrab, setColsTrab] = useState({ dni: true, antig: true }); // columnas opcionales de trabajadores
   const [alcance, setAlcance] = useState("general"); // general | area | base
   const [areaId, setAreaId] = useState("");
   const [baseId, setBaseId] = useState("");
@@ -106,6 +107,28 @@ export default function ExportarPage() {
           </div>
         </div>
 
+        {secc.trab && (
+          <div>
+            <span className="text-mut text-sm">Datos opcionales de trabajadores</span>
+            <div className="mt-1 flex gap-2 flex-wrap">
+              {[
+                { k: "dni", label: "DNI" },
+                { k: "antig", label: "Antigüedad" },
+              ].map((c) => (
+                <button
+                  key={c.k}
+                  onClick={() => setColsTrab((v) => ({ ...v, [c.k]: !v[c.k] }))}
+                  className={`tap px-4 py-2 rounded-xl border font-semibold text-sm ${
+                    colsTrab[c.k] ? "bg-accent text-white border-accent" : "bg-panel2 text-mut border-line"
+                  }`}
+                >
+                  {colsTrab[c.k] ? "✓ " : ""}{c.label}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
         <div>
           <span className="text-mut text-sm">Alcance</span>
           <div className="mt-1 flex gap-2 flex-wrap">
@@ -176,7 +199,7 @@ export default function ExportarPage() {
           onClick={async () => {
             setGenerando(true);
             try {
-              await exportarInformePDF({ secciones: secc, alcanceTexto, trabajadores, vehiculos, incidencias, baseMap });
+              await exportarInformePDF({ secciones: secc, colsTrab, alcanceTexto, trabajadores, vehiculos, incidencias, baseMap });
             } catch (e) {
               alert("No se pudo generar el PDF.");
             }
@@ -204,7 +227,7 @@ export default function ExportarPage() {
             </div>
 
             {secc.trab && (
-              <TablaTrab items={trabajadores} baseMap={baseMap} mostrarArea={alcance !== "base"} />
+              <TablaTrab items={trabajadores} baseMap={baseMap} mostrarArea={alcance !== "base"} cols={colsTrab} />
             )}
             {secc.veh && (
               <TablaVeh items={vehiculos} baseMap={baseMap} mostrarArea={alcance !== "base"} />
@@ -236,18 +259,18 @@ function Seccion({ titulo, n, children }) {
 const th = "text-left text-[11px] uppercase tracking-wide text-neutral-500 font-semibold border-b border-neutral-300 py-1.5 pr-3";
 const td = "text-sm py-1.5 pr-3 border-b border-neutral-200 align-top";
 
-function TablaTrab({ items, baseMap, mostrarArea }) {
+function TablaTrab({ items, baseMap, mostrarArea, cols }) {
   return (
     <Seccion titulo="Trabajadores" n={items.length}>
       <table className="w-full border-collapse">
         <thead>
           <tr>
             <th className={th}>Nombre</th>
-            <th className={th}>DNI</th>
+            {cols.dni && <th className={th}>DNI</th>}
             <th className={th}>ID</th>
             <th className={th}>Puesto</th>
             <th className={th}>Contrato</th>
-            <th className={th}>Antigüedad</th>
+            {cols.antig && <th className={th}>Antigüedad</th>}
             <th className={th}>Baja</th>
             <th className={th}>Base</th>
             {mostrarArea && <th className={th}>Área</th>}
@@ -259,11 +282,11 @@ function TablaTrab({ items, baseMap, mostrarArea }) {
             return (
               <tr key={t.id}>
                 <td className={td}>{t.nombre}</td>
-                <td className={td}>{t.dni || "—"}</td>
+                {cols.dni && <td className={td}>{t.dni || "—"}</td>}
                 <td className={td}>{t.id_personal || "—"}</td>
                 <td className={td}>{[t.titulo, t.puesto_trabajo].filter(Boolean).join(" · ") || "—"}</td>
                 <td className={td}>{t.tipo_contrato || "—"}</td>
-                <td className={td}>{t.fecha_antiguedad ? new Date(t.fecha_antiguedad).toLocaleDateString("es-ES") : "—"}</td>
+                {cols.antig && <td className={td}>{t.fecha_antiguedad ? new Date(t.fecha_antiguedad).toLocaleDateString("es-ES") : "—"}</td>}
                 <td className={td}>{t.de_baja ? "Sí" : "No"}</td>
                 <td className={td}>{t.base?.nombre || info.nombre || "—"}</td>
                 {mostrarArea && <td className={td}>{info.areaNombre || "—"}</td>}
