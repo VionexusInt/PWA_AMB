@@ -26,11 +26,16 @@ export default function AdjuntosInline({ tabla, registroId, legado, onAbrirVisor
     e.target.value = "";
     if (!files.length) return;
     setSubiendo(true);
-    for (const f of files) {
-      await subirCSSAdjuntoMulti(tabla, registroId, f);
+    try {
+      for (const f of files) {
+        await subirCSSAdjuntoMulti(tabla, registroId, f);
+      }
+    } catch (err) {
+      alert("No se pudo subir el archivo: " + (err?.message || "error desconocido"));
     }
-    const fresh = await getCSSAdjuntosMulti(tabla, registroId);
-    setAdjuntos(fresh);
+    try {
+      setAdjuntos(await getCSSAdjuntosMulti(tabla, registroId));
+    } catch {}
     setSubiendo(false);
   }
 
@@ -71,21 +76,23 @@ export default function AdjuntosInline({ tabla, registroId, legado, onAbrirVisor
         </div>
       )}
 
-      <button
-        type="button"
-        onClick={() => inputRef.current?.click()}
-        disabled={subiendo}
-        className="inline-flex items-center gap-1.5 text-xs font-semibold text-mut active:scale-95 disabled:opacity-50"
-      >
-        {subiendo ? "Subiendo…" : "+ Añadir archivo"}
-      </button>
-      <input
-        ref={inputRef}
-        type="file"
-        multiple
-        onChange={elegir}
-        style={{ position: "absolute", width: 1, height: 1, padding: 0, margin: -1, overflow: "hidden", clip: "rect(0,0,0,0)", border: 0 }}
-      />
+      {/* Input real transparente encima del texto: el dedo pulsa directamente el selector. */}
+      <div className="relative inline-flex overflow-hidden">
+        <span className={`inline-flex items-center gap-1.5 text-xs font-semibold text-mut py-1 pointer-events-none ${subiendo ? "opacity-50" : ""}`}>
+          {subiendo ? "Subiendo…" : "+ Añadir archivo"}
+        </span>
+        {!subiendo && (
+          <input
+            ref={inputRef}
+            type="file"
+            multiple
+            onChange={elegir}
+            aria-label="Añadir archivo"
+            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+            style={{ fontSize: 0 }}
+          />
+        )}
+      </div>
     </div>
   );
 }

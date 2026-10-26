@@ -88,20 +88,22 @@ export default function AdjuntosCSS({ tabla, registroId, legado, pendientes, set
       ))}
       {pendientes.length > 0 && <p className="text-xs text-mut mb-2">Se subirán al guardar.</p>}
 
-      <button
-        type="button"
-        onClick={() => inputRef.current?.click()}
-        className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-50 dark:bg-blue-900 text-blue-700 dark:text-blue-200 text-sm font-semibold active:scale-95"
-      >
-        + Añadir archivo
-      </button>
-      <input
-        ref={inputRef}
-        type="file"
-        multiple
-        onChange={elegir}
-        style={{ position: "absolute", width: 1, height: 1, padding: 0, margin: -1, overflow: "hidden", clip: "rect(0,0,0,0)", border: 0 }}
-      />
+      {/* El input real va encima del botón (transparente): el dedo pulsa directamente
+          el selector de archivos. Es lo más fiable en navegadores móviles (Xiaomi, Samsung, PWA…). */}
+      <div className="relative inline-flex overflow-hidden rounded-lg">
+        <span className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-50 dark:bg-blue-900 text-blue-700 dark:text-blue-200 text-sm font-semibold pointer-events-none">
+          + Añadir archivo
+        </span>
+        <input
+          ref={inputRef}
+          type="file"
+          multiple
+          onChange={elegir}
+          aria-label="Añadir archivo"
+          className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+          style={{ fontSize: 0 }}
+        />
+      </div>
     </div>
   );
 }

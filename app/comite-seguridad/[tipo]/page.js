@@ -173,7 +173,7 @@ export default function ComiteSeguridadTipoPage({ params }) {
       cargarDatos();
     } catch (error) {
       console.error("Error al guardar:", error);
-      alert("Hubo un error al guardar.");
+      alert("Hubo un error al guardar: " + (error?.message || "error desconocido"));
     } finally {
       setGuardando(false);
     }
@@ -195,6 +195,8 @@ export default function ComiteSeguridadTipoPage({ params }) {
     setLegadoActual(item.archivo_nombre ? { url: item.archivo_url, nombre: item.archivo_nombre } : null);
     setPendientes([]);
     setMostrarFormulario(true);
+    // En el móvil el formulario queda arriba, fuera de la vista: subimos hasta él
+    setTimeout(() => window.scrollTo({ top: 0, behavior: "smooth" }), 50);
   }
 
   async function handleBorrar(item) {
