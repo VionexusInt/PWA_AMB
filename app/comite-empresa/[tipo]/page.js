@@ -575,13 +575,12 @@ function FormResolverInc({ incidencia, onCancelar, onResuelta }) {
 function BotonArchivoInc({ onElegir }) {
   const ref = useRef(null);
   return (
-    <>
-      <button type="button" onClick={() => ref.current?.click()}
-        className="text-xs font-semibold text-mut active:scale-95">
+    <div className="relative inline-flex overflow-hidden">
+      <span className="text-xs font-semibold text-mut py-1 pointer-events-none">
         + Adjuntar archivo de la resolución
-      </button>
-      <input ref={ref} type="file" multiple onChange={onElegir}
-        style={{ position: "absolute", width: 1, height: 1, padding: 0, margin: -1, overflow: "hidden", clip: "rect(0,0,0,0)", border: 0 }} />
-    </>
+      </span>
+      <input ref={ref} type="file" multiple onChange={onElegir} aria-label="Adjuntar archivo"
+        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" style={{ fontSize: 0 }} />
+    </div>
   );
 }

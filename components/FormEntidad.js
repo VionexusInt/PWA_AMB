@@ -580,21 +580,22 @@ function AdjuntosBloque({ existentes, setExistentes, pendientes, setPendientes }
       )}
 
       {/* Botón elegir */}
-      <button
-        type="button"
-        onClick={() => inputRef.current?.click()}
-        className="tap mt-2 inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-panel2 border border-line text-sm font-semibold"
-      >
-        + Añadir archivo
-      </button>
-      <input
-        ref={inputRef}
-        type="file"
-        accept="image/*,application/pdf"
-        multiple
-        onChange={elegir}
-        style={{ position: "absolute", width: 1, height: 1, padding: 0, margin: -1, overflow: "hidden", clip: "rect(0,0,0,0)", border: 0 }}
-      />
+      {/* Input real transparente encima del botón: el dedo pulsa directamente el selector (fiable en móvil) */}
+      <div className="relative mt-2 inline-flex overflow-hidden rounded-xl">
+        <span className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-panel2 border border-line text-sm font-semibold pointer-events-none">
+          + Añadir archivo
+        </span>
+        <input
+          ref={inputRef}
+          type="file"
+          accept="image/*,application/pdf"
+          multiple
+          onChange={elegir}
+          aria-label="Añadir archivo"
+          className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+          style={{ fontSize: 0 }}
+        />
+      </div>
     </div>
   );
 }
